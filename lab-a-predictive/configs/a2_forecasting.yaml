@@ -1,0 +1,14 @@
+experiment: a2_forecasting
+seed: 42
+series:
+  - air_passengers
+  - uk_driver_deaths
+  - nottingham_temperature
+  - co2_mauna_loa
+  - uk_gas
+  - johnson_johnson
+models: [naive, seasonal_naive, drift, ets, sarima, lightgbm, mlp]
+horizon: {12: 12, 4: 8}     # season length -> forecast horizon
+n_origins: 4
+interval_level: 0.9
+sarima_max_order: 2

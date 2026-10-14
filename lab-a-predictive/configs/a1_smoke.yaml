@@ -1,0 +1,11 @@
+# Seconds-long version of the A1 experiments for CI (bundled data only).
+experiment: a1_smoke
+task: classification
+seed: 0
+output_dir: runs/smoke   # git-ignored; real reports go to lab-a-predictive/reports
+datasets: [breast_cancer]
+models: [dummy, logreg, lightgbm, mlp]
+cv: {n_splits: 3, n_repeats: 1}
+tune: {models: [logreg], n_trials: 3, inner_splits: 2}
+shap_rows: 50
+bootstrap_resamples: 100

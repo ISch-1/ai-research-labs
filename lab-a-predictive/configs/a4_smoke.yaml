@@ -1,0 +1,8 @@
+experiment: a4_smoke
+seed: 0
+output_dir: runs/smoke   # git-ignored; real reports go to lab-a-predictive/reports
+suite_title: Bundled + synthetic smoke suite
+datasets: [breast_cancer, synthetic_linear, synthetic_hastie]
+models: [logreg, tree, lightgbm]
+n_splits: 3
+n_repeats: 1

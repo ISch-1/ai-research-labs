@@ -1,0 +1,8 @@
+experiment: a3_anomaly
+seed: 42
+datasets: [synthetic_blobs, kdd_http, kdd_sa, mammography]
+detectors: [robust_z, mahalanobis, isolation_forest, lof, ocsvm, autoencoder]
+max_rows: 20000            # stratified subsample keeps the contamination rate
+n_seeds: 5
+fit_subsample: 5000
+bootstrap_resamples: 1000

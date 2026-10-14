@@ -91,3 +91,23 @@ def test_diebold_mariano_equal_forecasts_not_significant():
     e1 = rng.normal(0, 1.0, 300)
     e2 = rng.normal(0, 1.0, 300)
     assert not stats.diebold_mariano(e1, e2, horizon=3).significant()
+
+
+def test_diebold_mariano_long_horizon_falls_back_to_bartlett():
+    # 24 errors at h=12: the rectangular long-run variance is negative here, which
+    # used to return p = 1 even though model A is far better.
+    rng = np.random.default_rng(3)
+    good = rng.normal(0, 0.3, 24)
+    bad = 5 + np.sin(np.arange(24) / 2) + rng.normal(0, 0.3, 24)
+    result = stats.diebold_mariano(good, bad, horizon=12)
+    assert result.statistic < 0
+    assert result.significant()
+
+
+def test_holm_matches_statsmodels():
+    from statsmodels.stats.multitest import multipletests
+
+    raw = {"a": 0.01, "b": 0.04, "c": 0.03, "d": 0.005, "e": 0.2}
+    expected = multipletests(list(raw.values()), method="holm")[1]
+    adjusted = stats.holm(raw)
+    assert [adjusted[k] for k in raw] == pytest.approx(expected)

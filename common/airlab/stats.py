@@ -8,12 +8,14 @@ Situation                              Test
 2 models, same CV folds                ``corrected_resampled_ttest``
                                        (or ``wilcoxon_signed_rank``)
 2 classifiers, one shared test set     ``mcnemar``
->2 models across several datasets      ``friedman`` + ``nemenyi_cd``
+>2 models across several datasets      ``friedman`` + ``nemenyi_cd``, or
+                                       Wilcoxon vs. the best + ``holm``
 2 forecasters, same horizon            ``diebold_mariano``
 =====================================  ===================================
 
 References: Demšar (2006) JMLR 7; Nadeau & Bengio (2003) Mach. Learn. 52;
-Dietterich (1998) Neural Comput. 10; Harvey, Leybourne & Newbold (1997).
+Dietterich (1998) Neural Comput. 10; Harvey, Leybourne & Newbold (1997);
+Holm (1979) Scand. J. Stat. 6; Benavoli et al. (2016) JMLR 17.
 """
 
 from __future__ import annotations
@@ -177,6 +179,11 @@ def diebold_mariano(
     autocov = [np.sum(centered[k:] * centered[: n - k]) / n for k in range(horizon)]
     variance = (autocov[0] + 2 * sum(autocov[1:])) / n
     if variance <= 0:
+        # The rectangular-kernel long-run variance can go negative for long horizons
+        # on short samples; Bartlett (Newey-West) weights are guaranteed non-negative.
+        weights = 1 - np.arange(1, horizon) / horizon
+        variance = (autocov[0] + 2 * float(np.dot(weights, autocov[1:]))) / n
+    if variance <= 0:  # all loss differentials identical
         return TestResult("diebold_mariano", 0.0, 1.0, {"mean_loss_diff": float(d_mean)})
 
     dm = d_mean / np.sqrt(variance)
@@ -186,3 +193,15 @@ def diebold_mariano(
     return TestResult(
         "diebold_mariano", float(statistic), float(p), {"mean_loss_diff": float(d_mean)}
     )
+
+
+def holm(pvalues: dict[str, float]) -> dict[str, float]:
+    """Holm-Bonferroni adjusted p-values (step-down, controls the family-wise error)."""
+    names = sorted(pvalues, key=pvalues.get)  # type: ignore[arg-type]
+    m = len(names)
+    adjusted: dict[str, float] = {}
+    running = 0.0
+    for i, name in enumerate(names):
+        running = max(running, min(1.0, (m - i) * pvalues[name]))
+        adjusted[name] = running
+    return adjusted

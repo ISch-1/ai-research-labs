@@ -1,0 +1,7 @@
+experiment: a2_smoke
+seed: 0
+output_dir: runs/smoke   # git-ignored; real reports go to lab-a-predictive/reports
+series: [synthetic_seasonal, co2_mauna_loa]
+models: [naive, seasonal_naive, ets, sarima, lightgbm, mlp]
+n_origins: 2
+sarima_max_order: 1

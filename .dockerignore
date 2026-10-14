@@ -1,0 +1,17 @@
+.git
+.venv
+venv
+data
+runs
+mlruns
+models
+models-smoke
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+lab-a-predictive/reports
+lab-a-predictive/notebooks
+lab-b-nlp-llm
+lab-c-vision

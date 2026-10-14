@@ -21,6 +21,7 @@ runs/
 mlruns/
 mlartifacts/
 models/
+models-smoke/
 *.ckpt
 *.pt
 *.joblib

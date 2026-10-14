@@ -1,0 +1,6 @@
+experiment: a3_smoke_anomaly
+seed: 0
+output_dir: runs/smoke   # git-ignored; real reports go to lab-a-predictive/reports
+datasets: [synthetic_blobs]
+n_seeds: 2
+bootstrap_resamples: 100

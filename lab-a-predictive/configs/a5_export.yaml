@@ -1,0 +1,9 @@
+# Models served by the Lab A API (python -m lab_a.serving.export --config ...).
+experiment: a5_export
+seed: 42
+model_dir: models
+models:
+  - {kind: tabular, name: adult_income, dataset: adult, model: lightgbm}
+  - {kind: tabular, name: california_housing, dataset: california_housing, model: lightgbm}
+  - {kind: forecast, name: air_passengers, series: air_passengers}
+  - {kind: anomaly, name: kdd_http, dataset: kdd_http}

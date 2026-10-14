@@ -1,0 +1,15 @@
+experiment: a1_regression
+task: regression
+seed: 42
+datasets: [diabetes, wine_quality_red, california_housing]
+skip:
+  california_housing: [svm]
+max_train_rows: 15000
+test_size: 0.2
+cv: {n_splits: 5, n_repeats: 2}
+tune:
+  models: [ridge, lightgbm]
+  n_trials: 30
+  inner_splits: 3
+interpret: true
+bootstrap_resamples: 1000

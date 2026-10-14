@@ -1,0 +1,10 @@
+experiment: a1_smoke_regression
+task: regression
+seed: 0
+output_dir: runs/smoke   # git-ignored; real reports go to lab-a-predictive/reports
+datasets: [diabetes]
+models: [dummy, ridge, lightgbm]
+cv: {n_splits: 3, n_repeats: 1}
+tune: {models: [ridge], n_trials: 3, inner_splits: 2}
+shap_rows: 50
+bootstrap_resamples: 100

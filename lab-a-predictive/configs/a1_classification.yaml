@@ -1,0 +1,17 @@
+experiment: a1_classification
+task: classification
+seed: 42
+datasets: [breast_cancer, adult, bank_marketing]
+# Kernel SVM is O(n^2): too slow for the two large datasets.
+skip:
+  adult: [svm]
+  bank_marketing: [svm]
+max_train_rows: 15000      # same compute budget for every model
+test_size: 0.2
+cv: {n_splits: 5, n_repeats: 2}
+tune:
+  models: [logreg, lightgbm]
+  n_trials: 30
+  inner_splits: 3
+interpret: true
+bootstrap_resamples: 1000

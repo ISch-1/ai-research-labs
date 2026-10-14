@@ -1,0 +1,17 @@
+experiment: a4_benchmark
+seed: 42
+# Binary OpenML-CC18 datasets (see lab_a.datasets.BENCHMARK_CLASSIFICATION)
+datasets: [credit_g, pima_diabetes, spambase, kc1, pc1, banknote, blood_transfusion,
+           ilpd, ozone_level, phoneme, qsar_biodeg, wdbc]
+models: [logreg, tree, random_forest, lightgbm, svm, knn, mlp]
+n_splits: 5
+n_repeats: 2
+alpha: 0.05
+# Re-analyse the other experiments' results across their datasets.
+compare:
+  - {title: "A1 classification (CV ROC-AUC)", results: results/a1_classification.csv, metric: roc_auc}
+  - {title: "A1 regression (CV RMSE)", results: results/a1_regression.csv, metric: rmse, higher_is_better: false,
+     scale_free: false}
+  - {title: "A2 forecasting (MASE)", results: results/a2_forecasting.csv, metric: mase, higher_is_better: false,
+     exclude_models: []}
+  - {title: "A3b anomaly detection (PR-AUC)", results: results/a3_anomaly.csv, metric: pr_auc, exclude_models: []}

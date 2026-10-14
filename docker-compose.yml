@@ -1,5 +1,15 @@
-# Shared services for the labs. Model-serving APIs are added per lab (Phase 1: Lab A API).
 services:
+  # Lab A model API -> http://localhost:8000/docs
+  # (the image build trains the models, so the first build downloads the datasets)
+  lab-a-api:
+    build:
+      context: .
+      dockerfile: lab-a-predictive/Dockerfile
+    image: ai-research-labs/lab-a-api
+    ports:
+      - "8000:8000"
+
+  # Experiment tracking UI -> http://localhost:5000
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.16.2
     command: >

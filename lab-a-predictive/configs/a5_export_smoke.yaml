@@ -1,0 +1,9 @@
+# Offline models for tests and CI.
+experiment: a5_export_smoke
+seed: 0
+model_dir: models-smoke
+models:
+  - {kind: tabular, name: breast_cancer, dataset: breast_cancer, model: logreg}
+  - {kind: tabular, name: diabetes, dataset: diabetes, model: ridge}
+  - {kind: forecast, name: synthetic_seasonal, series: synthetic_seasonal}
+  - {kind: anomaly, name: synthetic_blobs, dataset: synthetic_blobs}

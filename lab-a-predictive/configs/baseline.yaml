@@ -1,0 +1,13 @@
+experiment: lab-a-baseline
+seed: 42
+dataset: breast_cancer
+test_size: 0.2
+scoring: accuracy
+cv:
+  n_splits: 10
+  n_repeats: 3
+models: [dummy, logreg, random_forest]
+bootstrap_resamples: 2000
+report_path: lab-a-predictive/reports/baseline_breast_cancer.md
+tags:
+  phase: "0"

@@ -1,0 +1,13 @@
+# Tiny version of baseline.yaml for CI: same code path, seconds instead of minutes.
+experiment: lab-a-baseline-smoke
+seed: 0
+dataset: wine
+test_size: 0.25
+cv:
+  n_splits: 3
+  n_repeats: 1
+models: [dummy, logreg]
+bootstrap_resamples: 100
+tags:
+  phase: "0"
+  smoke: "true"

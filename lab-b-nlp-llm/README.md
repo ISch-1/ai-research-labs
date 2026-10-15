@@ -5,7 +5,47 @@
 > and what each one costs in latency and tokens. Every comparison comes with a significance
 > test; every LLM claim is checked against references, an LLM judge and (optionally) human labels.
 
-<!-- FINDINGS -->
+## Key findings
+
+**B1 — Representations: contextual embeddings usually win, but not on every task.**
+- `bge-small` sentence embeddings are the most accurate on AG News (89.9%) and SST-2 (86.0%),
+  while encoding two to three orders of magnitude fewer texts per second than TF-IDF on CPU.
+- On Emotion, plain bag-of-words (85.9%) beats the best embedding (bge-small, 70.0%) by 16 points: the labels hinge on
+  specific emotion words that sentence embeddings blur. Across the three datasets no
+  representation is better in general (Friedman p = 0.54).
+
+**B2 — Trained models vs. prompting: it depends on the task.**
+- Topic classification (AG News): with only 128 labelled examples a frozen embedding + logistic
+  regression already beats zero-shot Qwen2.5-1.5B (73.7%); fine-tuned DistilBERT reaches 89.0%.
+- Sentiment (SST-2): few-shot Qwen2.5-1.5B (94.0%) beats every trained model up to 8,192 labels
+  (best: embeddings, 82.3%) — the one task where prompting clearly wins.
+- Emotion: the LLMs stay below 50%; fine-tuning reaches 86.7%.
+- Cost: an LLM label costs 0.3–1.6 s on 4 CPU cores vs. ~0.1 ms for TF-IDF and 7–40 ms for
+  embeddings or DistilBERT.
+
+**B3 — Search: hybrid + re-ranking on Wikipedia, dense on science.**
+- On SQuAD a cross-encoder over hybrid retrieval reaches nDCG@10 0.929 (vs. 0.853 for BM25), but
+  costs ~670 ms per query instead of under 10 ms. Dense retrieval alone (0.805) is *worse* than
+  BM25 here: SQuAD questions reuse the paragraph's words.
+- On SciFact dense and hybrid retrieval tie (0.706–0.707, Holm p = 0.76) and re-ranking does not
+  help (0.696): the MS MARCO cross-encoder does not transfer to scientific claims.
+- Chunk size pulls the two retrievers apart: BM25 finds more answers with larger chunks (hit@5
+  0.878 → 0.956 from 64 to 512 words, at 8× the prompt length), dense retrieval prefers small ones.
+
+**B4 — RAG: large gains, weak abstention, and poisoning works.**
+- Retrieval lifts token F1 from 0.10 to 0.61 (Qwen2.5-0.5B, top passage) and from 0.13 to 0.69
+  (1.5B, top 3); with the gold passage the 1.5B model reaches 0.83.
+- More context hurts the small model: 0.61 with one passage, 0.53 with three.
+- Asked about articles that are not in the corpus, the 0.5B model never says "I don't know"; the
+  1.5B model abstains 28% of the time when told it may, 0% when not told.
+- An "ignore previous instructions" passage never worked, but a planted passage stating a false
+  answer hijacked 85–90% of answers, and the defensive prompt barely helped (60–95%).
+- The LLM judge agrees with the reference-based label on 90% of answers (Cohen's κ = 0.79).
+
+**B5 — Cost and latency.** The 0.5B model with one retrieved passage (F1 0.61, 1.5 s per answer)
+dominates the Pareto frontier for latency; the 1.5B model is more accurate but ~3× slower per
+token (≈5 vs. ≈15 tokens/s), and every extra passage adds prefill time before the first token.
+
 
 ## Modules
 

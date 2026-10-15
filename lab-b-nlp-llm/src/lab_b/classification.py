@@ -212,6 +212,13 @@ def predict_llm(
 # ---------------------------------------------------------------------- experiment
 
 
+def _ms(value: float) -> str:
+    """Milliseconds with enough digits for sub-millisecond methods (TF-IDF is ~0.05 ms/text)."""
+    if not value:
+        return "—"
+    return f"{value:,.1f}" if value >= 1 else f"{value:.3f}"
+
+
 HOSTS: set[str] = set()  # machines whose timings appear in the current report
 
 
@@ -363,7 +370,7 @@ def run_dataset(
                     f"{final[m]['n']:,}",
                     str(acc_ci[m]),
                     f"{final[m]['train_s']:.1f}",
-                    f"{final[m]['ms']:.1f}" if final[m]["ms"] else "—",
+                    _ms(final[m]["ms"]),
                     "—" if m == best else fmt_p(tests[m].pvalue),
                 ]
                 for m in ranking

@@ -41,6 +41,8 @@ class TrainConfig(BaseModel):
     # then the whole network at `lr`, so a random head does not distort pretrained features.
     head_only_epochs: int = 0
     head_lr: float = 1e-3
+    # Keep BatchNorm running statistics fixed (eval mode) while the weights train.
+    freeze_bn: bool = False
 
 
 @dataclass
@@ -118,6 +120,10 @@ def fit(
     for _ in range(cfg.epochs):
         start = time.perf_counter()
         model.train()
+        if cfg.freeze_bn:
+            for m in model.modules():
+                if isinstance(m, nn.modules.batchnorm._BatchNorm):
+                    m.eval()
         losses = []
         for idx in torch.randperm(len(train), generator=g).split(cfg.batch_size):
             x = train.images[idx].float() / 255

@@ -128,12 +128,23 @@ class PetsConfig(BaseModel):
     )
 
 
+DIAGNOSTIC_VARIANTS: dict[str, dict[str, Any]] = {
+    "as in LP-FT": {},
+    "learning rate ÷10": {"lr_factor": 0.1},
+    "BatchNorm statistics frozen": {"freeze_bn": True},
+    "flip only (no random crops)": {"augment": "flip"},
+    "no label smoothing": {"label_smoothing": 0.0},
+}
+
+
 class TransferConfig(ExperimentConfig):
     output_dir: Path = DEFAULT_OUTPUT_DIR
     cifar: CifarConfig | None = Field(default_factory=CifarConfig)
     pets: PetsConfig | None = Field(default_factory=PetsConfig)
     tsne_points: int = 800
     bootstrap_resamples: int = 1000
+    # One epoch of LP-FT per variant, to find out why fine-tuning loses to the probe (None = skip)
+    diagnostic_model: str | None = None
 
 
 def pets_splits(pc: PetsConfig, seed: int) -> tuple[ImageSet, ImageSet, ImageSet]:
@@ -183,7 +194,7 @@ def finetuned(
     the whole network is fine-tuned at a low learning rate. Needs ``val`` (and ``test``,
     only to reuse the cached probe features).
     """
-    cfg = pc.finetune_train if mode == "naive" else pc.lpft_train
+    cfg = _recipe(pc, mode)
     if cfg is None:
         raise ValueError(f"fine-tuning mode {mode!r} is not configured")
     if mode == "naive":
@@ -199,14 +210,22 @@ def finetuned(
             pretrained(name, n_classes, pc.image_size), probe["clf"], probe["scaler"]
         )
 
-    return train_or_load(f"lpft-{name}", build, train, cfg)
+    return train_or_load(f"{mode.replace('_', '')}-{name}", build, train, cfg)
 
 
-FT_MODES = {"naive": "fine-tuned", "lpft": "LP-FT"}
+FT_MODES = {"naive": "fine-tuned", "lpft": "LP-FT", "lpft_bn": "LP-FT, frozen BN"}
 
 
 def finetune_modes(pc: PetsConfig) -> list[str]:
-    return ["naive"] + (["lpft"] if pc.lpft_train else [])
+    return ["naive"] + (["lpft", "lpft_bn"] if pc.lpft_train else [])
+
+
+def _recipe(pc: PetsConfig, mode: str) -> TrainConfig | None:
+    if mode == "naive":
+        return pc.finetune_train
+    if pc.lpft_train is None:
+        return None
+    return pc.lpft_train.model_copy(update={"freeze_bn": mode == "lpft_bn"})
 
 
 def scratch_cnn(pc: PetsConfig, train: ImageSet, n_classes: int) -> tuple[torch.nn.Module, Any]:
@@ -354,12 +373,13 @@ def part_pets(pc: PetsConfig, cfg: TransferConfig, out: Outputs) -> tuple[list[s
     for name in pc.probe:
         res[f"{name} · linear probe"] = linear_probe(name, pc, train, val, test, cfg.seed)
     for mode in finetune_modes(pc):
-        tc = pc.finetune_train if mode == "naive" else pc.lpft_train
+        tc = _recipe(pc, mode)
         assert tc is not None
         note = (
             f"random head, {tc.epochs} epochs, lr {tc.lr:g}"
             if mode == "naive"
             else f"head = linear probe, then {tc.epochs} epochs, lr {tc.lr:g}"
+            + (", BatchNorm statistics frozen" if tc.freeze_bn else "")
         )
         for name in pc.finetune:
             model, hist = finetuned(name, pc, train, n_classes, mode, val, test, cfg.seed)
@@ -436,6 +456,9 @@ def part_pets(pc: PetsConfig, cfg: TransferConfig, out: Outputs) -> tuple[list[s
         "",
     ]
 
+    if cfg.diagnostic_model and pc.lpft_train is not None:
+        lines += finetune_diagnostic(cfg, train, val, test)
+
     # t-SNE: scratch features vs. the strongest frozen backbone's features
     probes = [k for k in ranking if "linear probe" in k]
     if probes and cfg.tsne_points:
@@ -479,6 +502,51 @@ def part_pets(pc: PetsConfig, cfg: TransferConfig, out: Outputs) -> tuple[list[s
             "",
         ]
     return lines, rows
+
+
+def _accuracy(model: torch.nn.Module, data: ImageSet) -> float:
+    return float((predict(model, data).argmax(1) == data.labels).float().mean())
+
+
+def finetune_diagnostic(
+    cfg: TransferConfig, train: ImageSet, val: ImageSet, test: ImageSet
+) -> list[str]:
+    pc, name = cfg.pets, cfg.diagnostic_model
+    assert pc is not None and pc.lpft_train is not None and name is not None
+    probe = linear_probe(name, pc, train, val, test, cfg.seed)
+    y_val, y_te = val.labels.numpy(), test.labels.numpy()
+    rows = [
+        [
+            "linear probe, no fine-tuning",
+            f"{(probe['clf'].predict(probe['scaler'].transform(embed(pretrained(name, 0, pc.image_size), val))) == y_val).mean():.3f}",
+            f"{(probe['pred'] == y_te).mean():.3f}",
+        ]
+    ]
+    base = pc.lpft_train.model_copy(update={"epochs": 1, "schedule": "constant"})
+    for label, change in DIAGNOSTIC_VARIANTS.items():
+        change = dict(change)
+        factor = change.pop("lr_factor", 1.0)
+        tc = base.model_copy(update={**change, "lr": base.lr * factor})
+
+        def build() -> torch.nn.Module:
+            return head_from_probe(
+                pretrained(name, train.n_classes, pc.image_size), probe["clf"], probe["scaler"]
+            )
+
+        model, _ = train_or_load(f"diag-{name}", build, train, tc)
+        rows.append(
+            [
+                f"{label} (lr {tc.lr:g})",
+                f"{_accuracy(model, val):.3f}",
+                f"{_accuracy(model, test):.3f}",
+            ]
+        )
+    return [
+        f"### Why does fine-tuning lose to the probe? (`{name}`, one epoch from the probe head)",
+        "",
+        md_table(["Variant", "Validation accuracy", "Test accuracy"], rows),
+        "",
+    ]
 
 
 @torch.inference_mode()

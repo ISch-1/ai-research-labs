@@ -223,3 +223,14 @@ def test_lpft_head_only_stage_leaves_the_backbone_untouched():
     history = fit(model, data, TrainConfig(epochs=2, head_only_epochs=1, batch_size=32))
     assert len(history.train_loss) == 2
     assert all(p.requires_grad for p in model.parameters())  # unfrozen afterwards
+
+
+def test_freeze_bn_keeps_running_statistics():
+    data = synthetic_shapes(120)
+    model = SmallCNN(3, 3, width=4)
+    stats = {k: v.clone() for k, v in model.state_dict().items() if "running" in k}
+    fit(model, data, TrainConfig(epochs=1, batch_size=32, freeze_bn=True))
+    for k, v in stats.items():
+        torch.testing.assert_close(model.state_dict()[k], v)
+    fit(model, data, TrainConfig(epochs=1, batch_size=32))
+    assert any(not torch.equal(model.state_dict()[k], v) for k, v in stats.items())

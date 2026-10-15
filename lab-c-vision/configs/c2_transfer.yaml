@@ -17,3 +17,4 @@ pets:
   finetune_train: {epochs: 5, lr: 0.0003, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}
   lpft_train: {epochs: 3, lr: 0.0001, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}   # head starts from the linear probe
 tsne_points: 800
+diagnostic_model: efficientnet_b0   # one-epoch ablation of the fine-tuning recipe

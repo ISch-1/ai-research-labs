@@ -12,7 +12,7 @@ import json
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from typing import Any, Literal, cast
+from typing import Any, ClassVar, Literal, cast
 
 import numpy as np
 import torch
@@ -43,6 +43,17 @@ class TrainConfig(BaseModel):
     head_lr: float = 1e-3
     # Keep BatchNorm running statistics fixed (eval mode) while the weights train.
     freeze_bn: bool = False
+
+    # Fields added after models were first cached: left out of the cache key while at their
+    # default, so adding an option does not invalidate every model trained before it existed.
+    _LATE_FIELDS: ClassVar[tuple[str, ...]] = ("head_only_epochs", "head_lr", "freeze_bn")
+
+    def cache_fields(self) -> dict[str, Any]:
+        fields = self.model_dump()
+        for name in self._LATE_FIELDS:
+            if fields[name] == type(self).model_fields[name].default:
+                del fields[name]
+        return fields
 
 
 @dataclass
@@ -185,7 +196,7 @@ def train_or_load(
 ) -> tuple[nn.Module, History]:
     """Train ``build()`` on ``train`` unless a model with the same name, data and config is cached."""
     key = cache_key(
-        name, train.name, len(train), cfg.model_dump(), None if val is None else len(val)
+        name, train.name, len(train), cfg.cache_fields(), None if val is None else len(val)
     )
     path = data_dir() / "cache" / "lab_c" / "models" / f"{name}-{key}.pt"
     model = build()

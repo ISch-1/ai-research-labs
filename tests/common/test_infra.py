@@ -81,3 +81,26 @@ def test_unknown_tracking_backend(monkeypatch):
     monkeypatch.setenv("AIRLAB_TRACKING", "nope")
     with pytest.raises(ValueError), tracking.track_run("exp"):
         pass
+
+
+def test_parse_overrides_reads_yaml_values():
+    from airlab.experiment import parse_overrides
+
+    assert parse_overrides(
+        ["datasets=[sst2, emotion]", "max_test=50", "finetune=null", "name=x=y"]
+    ) == {
+        "datasets": ["sst2", "emotion"],
+        "max_test": 50,
+        "finetune": None,
+        "name": "x=y",
+    }
+    with pytest.raises(ValueError):
+        parse_overrides(["no-equals-sign"])
+
+
+def test_host_description_names_cpu_count():
+    import os
+
+    from airlab.experiment import host_description
+
+    assert f"{os.cpu_count()} logical CPUs" in host_description()

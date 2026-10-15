@@ -1,0 +1,9 @@
+experiment: b3_smoke
+seed: 0
+output_dir: runs/smoke
+datasets: [synthetic_qa]
+retrievers: [bm25, tfidf, "dense:hashing", "hybrid:bm25+tfidf"]
+n_questions: null
+chunk_dataset: synthetic_qa
+chunk_sizes: [8, 16]
+chunk_retrievers: [bm25]

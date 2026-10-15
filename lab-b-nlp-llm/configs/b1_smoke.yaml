@@ -1,0 +1,13 @@
+# Offline, seconds-long versions of the Lab B experiments (CI). Reports go to runs/smoke.
+experiment: b1_smoke
+seed: 0
+output_dir: runs/smoke
+datasets: [synthetic_topics]
+encoders: [bow, tfidf, hashing]
+max_train: 400
+max_test: 200
+throughput_sample: 100
+tsne_dataset: synthetic_topics
+tsne_encoders: [tfidf]
+tsne_points: 150
+bootstrap_resamples: 100

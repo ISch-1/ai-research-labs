@@ -1,0 +1,13 @@
+experiment: b4_smoke
+seed: 0
+output_dir: runs/smoke
+dataset: synthetic_qa
+n_questions: 24
+n_out_of_corpus: 1
+n_injection: 6
+retriever: bm25
+llms: [fake]
+judge: fake
+annotations: null
+bootstrap_resamples: 100
+price_per_mtok: {fake: [0.5, 1.5]}

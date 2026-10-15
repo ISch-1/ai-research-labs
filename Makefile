@@ -1,11 +1,13 @@
-.PHONY: setup lint format typecheck test smoke baseline lab-a export serve docker mlflow clean
+.PHONY: setup lint format typecheck test smoke baseline lab-a lab-b export serve docker mlflow clean
 
 PYTHON ?= python
 RUN = $(PYTHON) -m
 CONFIGS = lab-a-predictive/configs
+CONFIGS_B = lab-b-nlp-llm/configs
 
 setup:  ## Install everything in editable mode and enable git hooks
-	$(PYTHON) -m pip install -e ".[dev,lab-a,tracking]"
+	$(PYTHON) -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+	$(PYTHON) -m pip install -e ".[dev,lab-a,lab-b,tracking]"
 	pre-commit install
 
 lint:
@@ -17,10 +19,10 @@ format:
 	ruff format .
 
 typecheck:
-	mypy common lab-a-predictive/src
+	mypy common lab-a-predictive/src lab-b-nlp-llm/src
 
 test:
-	pytest --cov=airlab --cov=lab_a --cov-report=term-missing
+	pytest --cov=airlab --cov=lab_a --cov=lab_b --cov-report=term-missing
 
 smoke:  ## Fast end-to-end runs (offline data)
 	AIRLAB_TRACKING=off $(RUN) lab_a.baseline --config $(CONFIGS)/baseline_smoke.yaml
@@ -35,6 +37,12 @@ lab-a:  ## All Lab A experiments (~1 h on a laptop); A4 last, it reads the other
 	$(RUN) lab_a.clustering  --config $(CONFIGS)/a3_clustering.yaml
 	$(RUN) lab_a.anomaly     --config $(CONFIGS)/a3_anomaly.yaml
 	$(RUN) lab_a.benchmark   --config $(CONFIGS)/a4_benchmark.yaml
+
+lab-b:  ## All Lab B experiments (~4-5 h on a laptop CPU; B4 resumes from its generation cache)
+	$(RUN) lab_b.search          --config $(CONFIGS_B)/b3_search.yaml
+	$(RUN) lab_b.rag             --config $(CONFIGS_B)/b4_rag.yaml
+	$(RUN) lab_b.representations --config $(CONFIGS_B)/b1_representations.yaml
+	$(RUN) lab_b.classification  --config $(CONFIGS_B)/b2_classification.yaml
 
 export:  ## Train and export the served models to ./models
 	$(RUN) lab_a.serving.export --config $(CONFIGS)/a5_export.yaml

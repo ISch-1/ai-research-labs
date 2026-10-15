@@ -1,0 +1,10 @@
+experiment: b2_smoke
+seed: 0
+output_dir: runs/smoke
+datasets: [synthetic_topics]
+train_sizes: [30, 120, 480]
+max_test: 150
+embedder: hashing
+finetune: null
+llms: [fake]
+bootstrap_resamples: 100

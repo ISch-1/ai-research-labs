@@ -1,0 +1,14 @@
+experiment: b1_representations
+seed: 42
+datasets: [ag_news, sst2, emotion]
+encoders:
+  - bow
+  - tfidf
+  - static:minishlab/potion-base-8M
+  - st:sentence-transformers/all-MiniLM-L6-v2
+  - st:BAAI/bge-small-en-v1.5
+max_train: 5000
+max_test: 2000
+throughput_sample: 512
+tsne_dataset: ag_news
+tsne_encoders: [tfidf, st:BAAI/bge-small-en-v1.5]

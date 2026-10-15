@@ -1,0 +1,16 @@
+experiment: b4_rag
+seed: 42
+dataset: squad
+n_questions: 100
+n_out_of_corpus: 40
+n_injection: 40
+retriever: rerank:hybrid:bm25+dense:st:BAAI/bge-small-en-v1.5
+llms:
+  - hf:Qwen/Qwen2.5-0.5B-Instruct
+  - hf:Qwen/Qwen2.5-1.5B-Instruct
+grid:   # the 1.5B model is ~3x slower on CPU: a reduced grid
+  hf:Qwen/Qwen2.5-1.5B-Instruct: [closed, oracle, rag@3]
+robustness_config: rag@3
+judge: hf:Qwen/Qwen2.5-1.5B-Instruct
+judge_config: rag@3
+max_new_tokens: 32

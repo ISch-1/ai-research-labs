@@ -1,0 +1,13 @@
+experiment: b2_classification
+seed: 42
+datasets: [ag_news, sst2, emotion]
+train_sizes: [32, 128, 512, 2048, 8192]   # nested subsets -> learning curves
+max_test: 300                             # same test texts for every method (LLMs are slow on CPU)
+embedder: st:BAAI/bge-small-en-v1.5
+finetune:
+  model: distilbert-base-uncased
+  max_n: 2048                             # CPU budget: no fine-tuning on 8192
+  max_length: 96
+llms:
+  - hf:Qwen/Qwen2.5-0.5B-Instruct
+  - hf:Qwen/Qwen2.5-1.5B-Instruct

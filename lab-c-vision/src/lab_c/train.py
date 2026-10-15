@@ -12,7 +12,7 @@ import json
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 import torch
@@ -37,6 +37,10 @@ class TrainConfig(BaseModel):
     label_smoothing: float = 0.0
     augment: str | None = None
     seed: int = 0
+    # LP-FT (Kumar et al., 2022): train only the new head for this many epochs at `head_lr`,
+    # then the whole network at `lr`, so a random head does not distort pretrained features.
+    head_only_epochs: int = 0
+    head_lr: float = 1e-3
 
 
 @dataclass
@@ -69,9 +73,40 @@ def _optimizer(model: nn.Module, cfg: TrainConfig) -> torch.optim.Optimizer:
     return torch.optim.AdamW(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
 
 
+def classifier_head(model: nn.Module) -> nn.Module:
+    """The final classification layer (timm models, or ``.head`` for models defined here)."""
+    if hasattr(model, "get_classifier"):
+        return cast(nn.Module, model.get_classifier())
+    return cast(nn.Module, model.head)
+
+
 def fit(
     model: nn.Module, train: ImageSet, cfg: TrainConfig, val: ImageSet | None = None
 ) -> History:
+    if cfg.head_only_epochs:
+        head = {id(p) for p in classifier_head(model).parameters()}
+        for p in model.parameters():
+            p.requires_grad_(id(p) in head)
+        stage1 = fit(
+            model,
+            train,
+            cfg.model_copy(
+                update={"epochs": cfg.head_only_epochs, "lr": cfg.head_lr, "head_only_epochs": 0}
+            ),
+            val,
+        )
+        for p in model.parameters():
+            p.requires_grad_(True)
+        rest = cfg.model_copy(
+            update={"epochs": cfg.epochs - cfg.head_only_epochs, "head_only_epochs": 0}
+        )
+        stage2 = fit(model, train, rest, val)
+        return History(
+            stage1.train_loss + stage2.train_loss,
+            stage1.val_acc + stage2.val_acc,
+            stage1.epoch_seconds + stage2.epoch_seconds,
+            stage1.host,
+        )
     torch.manual_seed(cfg.seed)
     g = torch.Generator().manual_seed(cfg.seed)
     mean, std = normalization(model, train.images.shape[1])

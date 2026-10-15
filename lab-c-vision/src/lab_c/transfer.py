@@ -107,6 +107,19 @@ class PetsConfig(BaseModel):
             augment="resized+flip",
         )
     )
+    # LP-FT: head only first, then everything at a lower learning rate (None = skip)
+    lpft_train: TrainConfig | None = Field(
+        default_factory=lambda: TrainConfig(
+            epochs=5,
+            head_only_epochs=2,
+            head_lr=1e-3,
+            lr=1e-4,
+            batch_size=32,
+            weight_decay=0.05,
+            label_smoothing=0.1,
+            augment="resized+flip",
+        )
+    )
 
 
 class TransferConfig(ExperimentConfig):
@@ -130,11 +143,23 @@ def pets_splits(pc: PetsConfig, seed: int) -> tuple[ImageSet, ImageSet, ImageSet
 
 
 def finetuned(
-    name: str, pc: PetsConfig, train: ImageSet, n_classes: int
+    name: str, pc: PetsConfig, train: ImageSet, n_classes: int, mode: str = "naive"
 ) -> tuple[torch.nn.Module, Any]:
+    """``naive``: one learning rate for everything; ``lpft``: head first, then the whole network."""
+    cfg = pc.finetune_train if mode == "naive" else pc.lpft_train
+    if cfg is None:
+        raise ValueError(f"fine-tuning mode {mode!r} is not configured")
+    prefix = "ft" if mode == "naive" else "lpft"
     return train_or_load(
-        f"ft-{name}", lambda: pretrained(name, n_classes, pc.image_size), train, pc.finetune_train
+        f"{prefix}-{name}", lambda: pretrained(name, n_classes, pc.image_size), train, cfg
     )
+
+
+FT_MODES = {"naive": "fine-tuned", "lpft": "LP-FT"}
+
+
+def finetune_modes(pc: PetsConfig) -> list[str]:
+    return ["naive"] + (["lpft"] if pc.lpft_train else [])
 
 
 def scratch_cnn(pc: PetsConfig, train: ImageSet, n_classes: int) -> tuple[torch.nn.Module, Any]:
@@ -279,16 +304,24 @@ def part_pets(pc: PetsConfig, cfg: TransferConfig, out: Outputs) -> tuple[list[s
     }
     for name in pc.probe:
         res[f"{name} · linear probe"] = linear_probe(name, pc, train, val, test, cfg.seed)
-    for name in pc.finetune:
-        model, hist = finetuned(name, pc, train, n_classes)
-        res[f"{name} · fine-tuned"] = {
-            "pred": predict(model, test).argmax(1).numpy(),
-            "train_s": hist.train_seconds,
-            "trainable": n_params(model),
-            "total": n_params(model),
-            "img_s": throughput(model, test),
-            "note": f"{pc.finetune_train.epochs} epochs",
-        }
+    for mode in finetune_modes(pc):
+        tc = pc.finetune_train if mode == "naive" else pc.lpft_train
+        assert tc is not None
+        note = (
+            f"{tc.epochs} epochs, lr {tc.lr:g}"
+            if mode == "naive"
+            else f"{tc.head_only_epochs} head-only epochs (lr {tc.head_lr:g}) + {tc.epochs - tc.head_only_epochs} full (lr {tc.lr:g})"
+        )
+        for name in pc.finetune:
+            model, hist = finetuned(name, pc, train, n_classes, mode)
+            res[f"{name} · {FT_MODES[mode]}"] = {
+                "pred": predict(model, test).argmax(1).numpy(),
+                "train_s": hist.train_seconds,
+                "trainable": n_params(model),
+                "total": n_params(model),
+                "img_s": throughput(model, test),
+                "note": note,
+            }
 
     y = test.labels.numpy()
     acc = {

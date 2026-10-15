@@ -206,3 +206,20 @@ def test_a_model_trained_with_the_shortcut_follows_the_patch():
     lying = add_patch(test, wrong, 1.0, 4, 0, "noise")
     follows = float((predict(model, lying).argmax(1) == wrong).float().mean())
     assert follows > 0.9
+
+
+def test_lpft_head_only_stage_leaves_the_backbone_untouched():
+    data = synthetic_shapes(120)
+    model = SmallCNN(3, 3, width=4)
+    before = {
+        k: v.clone()
+        for k, v in model.stages.state_dict().items()
+        if "running" not in k and "num_batches" not in k
+    }
+    fit(model, data, TrainConfig(epochs=1, head_only_epochs=1, batch_size=32))
+    after = model.stages.state_dict()
+    for k, v in before.items():
+        torch.testing.assert_close(after[k], v)  # frozen during the head-only stage
+    history = fit(model, data, TrainConfig(epochs=2, head_only_epochs=1, batch_size=32))
+    assert len(history.train_loss) == 2
+    assert all(p.requires_grad for p in model.parameters())  # unfrozen afterwards

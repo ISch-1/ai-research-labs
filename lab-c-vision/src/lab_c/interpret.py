@@ -169,6 +169,7 @@ class InterpretConfig(ExperimentConfig):
     output_dir: Path = DEFAULT_OUTPUT_DIR
     pets: PetsConfig | None = Field(default_factory=PetsConfig)
     model: str = "resnet18"
+    mode: str = "lpft"  # "naive" or "lpft" fine-tuning (see C2)
     n_images: int = 100
     n_shown: int = 6
     ig_steps: int = 32
@@ -189,7 +190,7 @@ def pets_section(cfg: InterpretConfig, out: Outputs) -> tuple[list[str], list]:
     pc = cfg.pets
     assert pc is not None
     train, _, test = pets_splits(pc, cfg.seed)
-    model, _ = finetuned(cfg.model, pc, train, train.n_classes)
+    model, _ = finetuned(cfg.model, pc, train, train.n_classes, cfg.mode)
     model.eval()
     mean, std = normalization(model)
     rng = np.random.default_rng(cfg.seed)
@@ -263,7 +264,7 @@ def pets_section(cfg: InterpretConfig, out: Outputs) -> tuple[list[str], list]:
     save(fig, path)
 
     lines = [
-        f"## Attribution maps — {cfg.model} fine-tuned on Pets",
+        f"## Attribution maps — {cfg.model} ({cfg.mode}) on Pets",
         "",
         f"{len(idx)} random test images; each map explains the model's own prediction. Deletion AUC = "
         "mean probability of the predicted class while removing pixels in the map's order (lower = "

@@ -33,7 +33,7 @@ from airlab.seed import set_seed
 from airlab.tracking import track_run
 from lab_c.datasets import ImageSet
 from lab_c.train import predict
-from lab_c.transfer import PetsConfig, finetuned, pets_splits, scratch_cnn
+from lab_c.transfer import FT_MODES, PetsConfig, finetune_modes, finetuned, pets_splits, scratch_cnn
 
 DEFAULT_OUTPUT_DIR = Path("lab-c-vision/reports")
 CORRUPTIONS = ("gaussian_noise", "blur", "contrast", "dark")
@@ -42,7 +42,7 @@ CORRUPTIONS = ("gaussian_noise", "blur", "contrast", "dark")
 class ErrorsConfig(ExperimentConfig):
     output_dir: Path = DEFAULT_OUTPUT_DIR
     pets: PetsConfig = Field(default_factory=PetsConfig)
-    main_model: str = "auto"  # a fine-tuned backbone name, or "auto" = best validation accuracy
+    main_model: str = "auto"  # e.g. "resnet18 · LP-FT", or "auto" = best validation accuracy
     n_confident_errors: int = 12
     ece_bins: int = 15
 
@@ -141,7 +141,9 @@ def run(cfg: ErrorsConfig) -> str:
     y_te = test.labels.numpy()
 
     models: dict[str, torch.nn.Module] = {
-        name: finetuned(name, pc, train, n_classes)[0] for name in pc.finetune
+        f"{name} · {FT_MODES[mode]}": finetuned(name, pc, train, n_classes, mode)[0]
+        for mode in finetune_modes(pc)
+        for name in pc.finetune
     }
     val_acc = {
         name: float((predict(m, val).argmax(1) == val.labels).float().mean())
@@ -149,7 +151,7 @@ def run(cfg: ErrorsConfig) -> str:
     }
     main = max(val_acc, key=val_acc.get) if cfg.main_model == "auto" else cfg.main_model  # type: ignore[arg-type]
     compared = {
-        f"{main} (fine-tuned)": models[main],
+        main: models[main],
         "SmallCNN (scratch)": scratch_cnn(pc, train, n_classes)[0],
     }
     rows: list[dict[str, Any]] = []

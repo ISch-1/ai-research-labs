@@ -6,7 +6,9 @@ pets:   # must match c2_transfer.yaml so the cached models are reused
   val_fraction: 0.1
   finetune: [resnet18]
   finetune_train: {epochs: 5, lr: 0.0003, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}
+  lpft_train: {epochs: 5, head_only_epochs: 2, head_lr: 0.001, lr: 0.0001, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}
 model: resnet18
+mode: lpft
 n_images: 100
 n_shown: 6
 ig_steps: 32

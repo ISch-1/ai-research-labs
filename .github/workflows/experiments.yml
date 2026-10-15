@@ -14,7 +14,7 @@ on:
       experiment:
         description: Experiment to run
         type: choice
-        options: [b2_classification, c3_augmentation]
+        options: [b2_classification, c3_augmentation, c5_shortcut]
         default: c3_augmentation
 
 env:
@@ -33,6 +33,7 @@ jobs:
       shards: ${{ steps.plan.outputs.shards }}
       cache: ${{ steps.plan.outputs.cache }}
       extra: ${{ steps.plan.outputs.extra }}
+      args: ${{ steps.plan.outputs.args }}
       reports: ${{ steps.plan.outputs.reports }}
     steps:
       - id: plan
@@ -51,6 +52,17 @@ jobs:
               echo "config=lab-c-vision/configs/c3_augmentation.yaml" >> "$GITHUB_OUTPUT"
               echo "key=variants" >> "$GITHUB_OUTPUT"
               echo 'shards=["none", "flip+crop", "flip+crop+color", "flip+crop+cutout", "flip+crop+mixup", "flip+crop+cutmix"]' >> "$GITHUB_OUTPUT"
+              echo "cache=data/cache/lab_c/models" >> "$GITHUB_OUTPUT"
+              echo "extra=lab-c" >> "$GITHUB_OUTPUT"
+              echo "reports=lab-c-vision/reports" >> "$GITHUB_OUTPUT" ;;
+            c5_shortcut)
+              # Only the shortcut-learning study of C5: it trains its own CIFAR-10 CNNs. The Pets
+              # part needs the models from C2 and runs where C2 ran.
+              echo "module=lab_c.interpret" >> "$GITHUB_OUTPUT"
+              echo "config=lab-c-vision/configs/c5_interpret.yaml" >> "$GITHUB_OUTPUT"
+              echo "key=" >> "$GITHUB_OUTPUT"
+              echo 'shards=["shortcut"]' >> "$GITHUB_OUTPUT"
+              echo "args=--set pets=null --set experiment=c5_shortcut" >> "$GITHUB_OUTPUT"
               echo "cache=data/cache/lab_c/models" >> "$GITHUB_OUTPUT"
               echo "extra=lab-c" >> "$GITHUB_OUTPUT"
               echo "reports=lab-c-vision/reports" >> "$GITHUB_OUTPUT" ;;
@@ -77,12 +89,12 @@ jobs:
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[${{ needs.plan.outputs.extra }}]"
       - name: Run ${{ matrix.shard }}
-        run: >
-          python -m ${{ needs.plan.outputs.module }}
-          --config ${{ needs.plan.outputs.config }}
-          --set "${{ needs.plan.outputs.key }}=[${{ matrix.shard }}]"
-          --set "experiment=${{ inputs.experiment }}_shard${{ strategy.job-index }}"
-          --set output_dir=runs/shards
+        run: |
+          SHARD_ARGS=()
+          if [ -n "${{ needs.plan.outputs.key }}" ]; then
+            SHARD_ARGS=(--set "${{ needs.plan.outputs.key }}=[${{ matrix.shard }}]" --set "experiment=${{ inputs.experiment }}_shard${{ strategy.job-index }}")
+          fi
+          python -m ${{ needs.plan.outputs.module }} --config ${{ needs.plan.outputs.config }} ${{ needs.plan.outputs.args }} "${SHARD_ARGS[@]}" --set output_dir=runs/shards
       - name: Upload what the shard computed
         if: always()
         uses: actions/upload-artifact@v4
@@ -116,6 +128,7 @@ jobs:
         run: >
           python -m ${{ needs.plan.outputs.module }}
           --config ${{ needs.plan.outputs.config }}
+          ${{ needs.plan.outputs.args }}
           --set output_dir=out
       - uses: actions/upload-artifact@v4
         with:

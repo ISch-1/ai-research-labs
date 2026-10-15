@@ -44,7 +44,15 @@ from airlab.stats import mcnemar
 from airlab.tracking import track_run
 from lab_c.datasets import ImageSet, load_images
 from lab_c.nets import MLP, SmallCNN, n_params, normalization, pretrained
-from lab_c.train import TrainConfig, cache_key, predict, throughput, to_input, train_or_load
+from lab_c.train import (
+    TrainConfig,
+    cache_key,
+    classifier_head,
+    predict,
+    throughput,
+    to_input,
+    train_or_load,
+)
 
 DEFAULT_OUTPUT_DIR = Path("lab-c-vision/reports")
 CAT_BREEDS = {
@@ -107,12 +115,10 @@ class PetsConfig(BaseModel):
             augment="resized+flip",
         )
     )
-    # LP-FT: head only first, then everything at a lower learning rate (None = skip)
+    # LP-FT: start from the converged linear probe, then fine-tune everything at a low rate (None = skip)
     lpft_train: TrainConfig | None = Field(
         default_factory=lambda: TrainConfig(
-            epochs=5,
-            head_only_epochs=2,
-            head_lr=1e-3,
+            epochs=3,
             lr=1e-4,
             batch_size=32,
             weight_decay=0.05,
@@ -142,17 +148,58 @@ def pets_splits(pc: PetsConfig, seed: int) -> tuple[ImageSet, ImageSet, ImageSet
     return train, val, test
 
 
+def head_from_probe(
+    model: torch.nn.Module, clf: LogisticRegression, scaler: StandardScaler
+) -> torch.nn.Module:
+    """Load a fitted logistic regression on standardized features into the model's linear head.
+
+    logits = ((f - mu) / s) @ W.T + b  =  f @ (W / s).T + (b - W @ (mu / s))
+    """
+    head = classifier_head(model)
+    W = torch.as_tensor(clf.coef_ / scaler.scale_, dtype=torch.float32)
+    b = torch.as_tensor(
+        clf.intercept_ - clf.coef_ @ (scaler.mean_ / scaler.scale_), dtype=torch.float32
+    )
+    assert isinstance(head, torch.nn.Linear) and head.weight.shape == W.shape
+    with torch.no_grad():
+        head.weight.copy_(W)
+        head.bias.copy_(b)
+    return model
+
+
 def finetuned(
-    name: str, pc: PetsConfig, train: ImageSet, n_classes: int, mode: str = "naive"
+    name: str,
+    pc: PetsConfig,
+    train: ImageSet,
+    n_classes: int,
+    mode: str = "naive",
+    val: ImageSet | None = None,
+    test: ImageSet | None = None,
+    seed: int = 0,
 ) -> tuple[torch.nn.Module, Any]:
-    """``naive``: one learning rate for everything; ``lpft``: head first, then the whole network."""
+    """``naive``: new random head, one learning rate for everything.
+
+    ``lpft`` (Kumar et al., 2022): the head starts from the converged linear probe, then
+    the whole network is fine-tuned at a low learning rate. Needs ``val`` (and ``test``,
+    only to reuse the cached probe features).
+    """
     cfg = pc.finetune_train if mode == "naive" else pc.lpft_train
     if cfg is None:
         raise ValueError(f"fine-tuning mode {mode!r} is not configured")
-    prefix = "ft" if mode == "naive" else "lpft"
-    return train_or_load(
-        f"{prefix}-{name}", lambda: pretrained(name, n_classes, pc.image_size), train, cfg
-    )
+    if mode == "naive":
+        return train_or_load(
+            f"ft-{name}", lambda: pretrained(name, n_classes, pc.image_size), train, cfg
+        )
+    if val is None or test is None:
+        raise ValueError("LP-FT needs the validation and test splits for its linear probe")
+    probe = linear_probe(name, pc, train, val, test, seed)
+
+    def build() -> torch.nn.Module:
+        return head_from_probe(
+            pretrained(name, n_classes, pc.image_size), probe["clf"], probe["scaler"]
+        )
+
+    return train_or_load(f"lpft-{name}", build, train, cfg)
 
 
 FT_MODES = {"naive": "fine-tuned", "lpft": "LP-FT"}
@@ -217,6 +264,8 @@ def linear_probe(
         "img_s": throughput(backbone, test),
         "features": f_te,
         "note": f"C = {best[1]}",
+        "clf": best[2],
+        "scaler": scaler,
     }
 
 
@@ -308,12 +357,12 @@ def part_pets(pc: PetsConfig, cfg: TransferConfig, out: Outputs) -> tuple[list[s
         tc = pc.finetune_train if mode == "naive" else pc.lpft_train
         assert tc is not None
         note = (
-            f"{tc.epochs} epochs, lr {tc.lr:g}"
+            f"random head, {tc.epochs} epochs, lr {tc.lr:g}"
             if mode == "naive"
-            else f"{tc.head_only_epochs} head-only epochs (lr {tc.head_lr:g}) + {tc.epochs - tc.head_only_epochs} full (lr {tc.lr:g})"
+            else f"head = linear probe, then {tc.epochs} epochs, lr {tc.lr:g}"
         )
         for name in pc.finetune:
-            model, hist = finetuned(name, pc, train, n_classes, mode)
+            model, hist = finetuned(name, pc, train, n_classes, mode, val, test, cfg.seed)
             res[f"{name} · {FT_MODES[mode]}"] = {
                 "pred": predict(model, test).argmax(1).numpy(),
                 "train_s": hist.train_seconds,

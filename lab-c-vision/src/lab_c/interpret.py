@@ -189,8 +189,8 @@ def _overlay(ax, image: torch.Tensor, heat: torch.Tensor | None, title: str) -> 
 def pets_section(cfg: InterpretConfig, out: Outputs) -> tuple[list[str], list]:
     pc = cfg.pets
     assert pc is not None
-    train, _, test = pets_splits(pc, cfg.seed)
-    model, _ = finetuned(cfg.model, pc, train, train.n_classes, cfg.mode)
+    train, val, test = pets_splits(pc, cfg.seed)
+    model, _ = finetuned(cfg.model, pc, train, train.n_classes, cfg.mode, val, test, cfg.seed)
     model.eval()
     mean, std = normalization(model)
     rng = np.random.default_rng(cfg.seed)

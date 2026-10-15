@@ -141,7 +141,9 @@ def run(cfg: ErrorsConfig) -> str:
     y_te = test.labels.numpy()
 
     models: dict[str, torch.nn.Module] = {
-        f"{name} · {FT_MODES[mode]}": finetuned(name, pc, train, n_classes, mode)[0]
+        f"{name} · {FT_MODES[mode]}": finetuned(
+            name, pc, train, n_classes, mode, val, test, cfg.seed
+        )[0]
         for mode in finetune_modes(pc)
         for name in pc.finetune
     }

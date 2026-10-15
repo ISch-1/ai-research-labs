@@ -12,7 +12,7 @@ import json
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 import torch
@@ -75,9 +75,8 @@ def _optimizer(model: nn.Module, cfg: TrainConfig) -> torch.optim.Optimizer:
 
 def classifier_head(model: nn.Module) -> nn.Module:
     """The final classification layer (timm models, or ``.head`` for models defined here)."""
-    if hasattr(model, "get_classifier"):
-        return cast(nn.Module, model.get_classifier())
-    return cast(nn.Module, model.head)
+    getter: Any = getattr(model, "get_classifier", None)
+    return cast(nn.Module, getter() if getter is not None else model.head)
 
 
 def fit(

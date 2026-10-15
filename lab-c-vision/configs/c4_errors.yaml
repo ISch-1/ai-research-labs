@@ -1,0 +1,13 @@
+experiment: c4_errors
+seed: 42
+pets:   # must match c2_transfer.yaml so the cached models are reused
+  dataset: pets
+  image_size: 160
+  val_fraction: 0.1
+  scratch_width: 32
+  scratch_input: 112
+  scratch: {epochs: 20, lr: 0.002, batch_size: 64, augment: resized+flip+color}
+  finetune: [mobilenetv3_small_100, resnet18, efficientnet_b0]
+  finetune_train: {epochs: 5, lr: 0.0003, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}
+main_model: auto
+n_confident_errors: 12

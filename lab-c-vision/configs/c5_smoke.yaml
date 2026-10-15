@@ -1,0 +1,9 @@
+experiment: c5_smoke
+seed: 0
+output_dir: runs/smoke
+pets: null
+shortcut:
+  dataset: synthetic_shapes
+  patch_size: 4
+  width: 16
+  train: {epochs: 8, lr: 0.003, batch_size: 64, augment: flip}

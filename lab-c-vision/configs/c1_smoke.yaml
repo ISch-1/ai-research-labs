@@ -1,0 +1,11 @@
+# Offline, seconds-long version for CI (synthetic shapes, tiny networks). Reports go to runs/smoke.
+experiment: c1_smoke
+seed: 0
+output_dir: runs/smoke
+dataset: synthetic_shapes
+numpy_hidden: [16]
+numpy_epochs: 2
+deep_hidden: [32, 32]
+ablation_epochs: 2
+seeds: 2
+bootstrap_resamples: 100

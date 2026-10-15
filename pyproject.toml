@@ -47,6 +47,14 @@ lab-b = [
     "datasets>=2.20",
     "faiss-cpu>=1.8",
 ]
+# Lab C (computer vision). CPU-only machines: install PyTorch's CPU build first (see lab-b).
+lab-c = [
+    "torch>=2.4",
+    "torchvision>=0.19",
+    "timm>=1.0",
+    "datasets>=2.20",
+    "pillow>=10.0",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
@@ -57,12 +65,13 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["airlab", "lab_a", "lab_a.serving", "lab_b"]
+packages = ["airlab", "lab_a", "lab_a.serving", "lab_b", "lab_c"]
 
 [tool.setuptools.package-dir]
 airlab = "common/airlab"
 lab_a = "lab-a-predictive/src/lab_a"
 lab_b = "lab-b-nlp-llm/src/lab_b"
+lab_c = "lab-c-vision/src/lab_c"
 
 [tool.ruff]
 line-length = 100
@@ -76,7 +85,7 @@ allowed-confusables = ["×", "α", "σ", "–"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["airlab", "lab_a", "lab_b"]
+known-first-party = ["airlab", "lab_a", "lab_b", "lab_c"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["NPY002"]  # tests exercise the legacy global RNG on purpose (set_seed)

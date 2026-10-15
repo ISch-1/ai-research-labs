@@ -1,11 +1,11 @@
 # Long-running experiments on GitHub-hosted runners, started by hand:
 #
-#   gh workflow run experiments.yml --ref <branch> -f experiment=b2_classification
+#   gh workflow run experiments.yml --ref <branch> -f experiment=c3_augmentation
 #
-# B2 runs one shard per dataset in parallel; each shard caches its predictions and
-# timings, and the `report` job rebuilds the full report from those caches (no model
-# is downloaded there). Download the `b2_classification-report` artifact and copy its
-# contents into lab-b-nlp-llm/reports/ to update the repository.
+# The experiment is split into parallel shards (one per dataset or per variant); each
+# shard caches what it computed, and the `report` job rebuilds the full report from
+# those caches without recomputing anything. Download the `<experiment>-report`
+# artifact and copy its contents into the lab's reports/ folder.
 name: Experiments
 
 on:
@@ -14,8 +14,8 @@ on:
       experiment:
         description: Experiment to run
         type: choice
-        options: [b2_classification]
-        default: b2_classification
+        options: [b2_classification, c3_augmentation]
+        default: c3_augmentation
 
 env:
   AIRLAB_TRACKING: "off"
@@ -24,14 +24,48 @@ env:
   PYTHONUNBUFFERED: "1"
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      module: ${{ steps.plan.outputs.module }}
+      config: ${{ steps.plan.outputs.config }}
+      key: ${{ steps.plan.outputs.key }}
+      shards: ${{ steps.plan.outputs.shards }}
+      cache: ${{ steps.plan.outputs.cache }}
+      extra: ${{ steps.plan.outputs.extra }}
+      reports: ${{ steps.plan.outputs.reports }}
+    steps:
+      - id: plan
+        run: |
+          case "${{ inputs.experiment }}" in
+            b2_classification)
+              echo "module=lab_b.classification" >> "$GITHUB_OUTPUT"
+              echo "config=lab-b-nlp-llm/configs/b2_classification.yaml" >> "$GITHUB_OUTPUT"
+              echo "key=datasets" >> "$GITHUB_OUTPUT"
+              echo 'shards=["ag_news", "sst2", "emotion"]' >> "$GITHUB_OUTPUT"
+              echo "cache=data/cache/b2" >> "$GITHUB_OUTPUT"
+              echo "extra=lab-b" >> "$GITHUB_OUTPUT"
+              echo "reports=lab-b-nlp-llm/reports" >> "$GITHUB_OUTPUT" ;;
+            c3_augmentation)
+              echo "module=lab_c.augmentation" >> "$GITHUB_OUTPUT"
+              echo "config=lab-c-vision/configs/c3_augmentation.yaml" >> "$GITHUB_OUTPUT"
+              echo "key=variants" >> "$GITHUB_OUTPUT"
+              echo 'shards=["none", "flip+crop", "flip+crop+color", "flip+crop+cutout", "flip+crop+mixup", "flip+crop+cutmix"]' >> "$GITHUB_OUTPUT"
+              echo "cache=data/cache/lab_c/models" >> "$GITHUB_OUTPUT"
+              echo "extra=lab-c" >> "$GITHUB_OUTPUT"
+              echo "reports=lab-c-vision/reports" >> "$GITHUB_OUTPUT" ;;
+            *) echo "unknown experiment" && exit 1 ;;
+          esac
+
   shard:
-    name: ${{ inputs.experiment }} / ${{ matrix.dataset }}
+    needs: plan
+    name: ${{ inputs.experiment }} / ${{ matrix.shard }}
     runs-on: ubuntu-latest
     timeout-minutes: 340  # GitHub's hard limit for a job is 360
     strategy:
       fail-fast: false
       matrix:
-        dataset: [ag_news, sst2, emotion]
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -40,28 +74,28 @@ jobs:
           cache: pip
       - name: Install (CPU-only PyTorch)
         run: |
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[lab-b]"
-      - name: Run ${{ matrix.dataset }}
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[${{ needs.plan.outputs.extra }}]"
+      - name: Run ${{ matrix.shard }}
         run: >
-          python -m lab_b.classification
-          --config lab-b-nlp-llm/configs/${{ inputs.experiment }}.yaml
-          --set "datasets=[${{ matrix.dataset }}]"
-          --set "experiment=${{ inputs.experiment }}_${{ matrix.dataset }}"
+          python -m ${{ needs.plan.outputs.module }}
+          --config ${{ needs.plan.outputs.config }}
+          --set "${{ needs.plan.outputs.key }}=[${{ matrix.shard }}]"
+          --set "experiment=${{ inputs.experiment }}_shard${{ strategy.job-index }}"
           --set output_dir=runs/shards
-      - name: Upload predictions and timings
+      - name: Upload what the shard computed
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cache-${{ matrix.dataset }}
-          path: data/cache/b2
+          name: cache-${{ strategy.job-index }}
+          path: ${{ needs.plan.outputs.cache }}
           if-no-files-found: error
           retention-days: 14
 
   report:
-    needs: shard
+    needs: [plan, shard]
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -70,18 +104,18 @@ jobs:
           cache: pip
       - name: Install (CPU-only PyTorch)
         run: |
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[lab-b]"
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[${{ needs.plan.outputs.extra }}]"
       - name: Collect the shards' caches
         uses: actions/download-artifact@v4
         with:
           pattern: cache-*
-          path: data/cache/b2
+          path: ${{ needs.plan.outputs.cache }}
           merge-multiple: true
       - name: Build the full report from the caches
         run: >
-          python -m lab_b.classification
-          --config lab-b-nlp-llm/configs/${{ inputs.experiment }}.yaml
+          python -m ${{ needs.plan.outputs.module }}
+          --config ${{ needs.plan.outputs.config }}
           --set output_dir=out
       - uses: actions/upload-artifact@v4
         with:

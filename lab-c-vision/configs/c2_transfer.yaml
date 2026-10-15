@@ -1,0 +1,18 @@
+experiment: c2_transfer
+seed: 42
+cifar:
+  dataset: cifar10
+  mlp_hidden: [512, 256]
+  cnn_width: 32
+  train: {epochs: 15, lr: 0.002, batch_size: 128, augment: flip+crop}
+pets:
+  dataset: pets
+  image_size: 160
+  val_fraction: 0.1
+  scratch_width: 32
+  scratch_input: 112
+  scratch: {epochs: 20, lr: 0.002, batch_size: 64, augment: resized+flip+color}
+  probe: [resnet18, mobilenetv3_small_100, efficientnet_b0, deit_tiny_patch16_224]
+  finetune: [mobilenetv3_small_100, resnet18, efficientnet_b0]
+  finetune_train: {epochs: 5, lr: 0.0003, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}
+tsne_points: 800

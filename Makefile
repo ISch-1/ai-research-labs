@@ -1,13 +1,14 @@
-.PHONY: setup lint format typecheck test smoke baseline lab-a lab-b export serve docker mlflow clean
+.PHONY: setup lint format typecheck test smoke baseline lab-a lab-b lab-c export serve docker mlflow clean
 
 PYTHON ?= python
 RUN = $(PYTHON) -m
 CONFIGS = lab-a-predictive/configs
 CONFIGS_B = lab-b-nlp-llm/configs
+CONFIGS_C = lab-c-vision/configs
 
 setup:  ## Install everything in editable mode and enable git hooks
-	$(PYTHON) -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-	$(PYTHON) -m pip install -e ".[dev,lab-a,lab-b,tracking]"
+	$(PYTHON) -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+	$(PYTHON) -m pip install -e ".[dev,lab-a,lab-b,lab-c,tracking]"
 	pre-commit install
 
 lint:
@@ -19,10 +20,10 @@ format:
 	ruff format .
 
 typecheck:
-	mypy common lab-a-predictive/src lab-b-nlp-llm/src
+	mypy common lab-a-predictive/src lab-b-nlp-llm/src lab-c-vision/src
 
 test:
-	pytest --cov=airlab --cov=lab_a --cov=lab_b --cov-report=term-missing
+	pytest --cov=airlab --cov=lab_a --cov=lab_b --cov=lab_c --cov-report=term-missing
 
 smoke:  ## Fast end-to-end runs (offline data)
 	AIRLAB_TRACKING=off $(RUN) lab_a.baseline --config $(CONFIGS)/baseline_smoke.yaml
@@ -43,6 +44,13 @@ lab-b:  ## All Lab B experiments (~4-5 h on a laptop CPU; B4 resumes from its ge
 	$(RUN) lab_b.rag             --config $(CONFIGS_B)/b4_rag.yaml
 	$(RUN) lab_b.representations --config $(CONFIGS_B)/b1_representations.yaml
 	$(RUN) lab_b.classification  --config $(CONFIGS_B)/b2_classification.yaml
+
+lab-c:  ## Lab C on this machine (C3 is faster on GitHub: gh workflow run experiments.yml -f experiment=c3_augmentation)
+	$(RUN) lab_c.fundamentals  --config $(CONFIGS_C)/c1_fundamentals.yaml
+	$(RUN) lab_c.transfer      --config $(CONFIGS_C)/c2_transfer.yaml
+	$(RUN) lab_c.errors        --config $(CONFIGS_C)/c4_errors.yaml
+	$(RUN) lab_c.interpret     --config $(CONFIGS_C)/c5_interpret.yaml
+	$(RUN) lab_c.augmentation  --config $(CONFIGS_C)/c3_augmentation.yaml
 
 export:  ## Train and export the served models to ./models
 	$(RUN) lab_a.serving.export --config $(CONFIGS)/a5_export.yaml

@@ -1,0 +1,9 @@
+experiment: c1_fundamentals
+seed: 42
+dataset: fashion_mnist
+numpy_hidden: [128, 64]
+numpy_epochs: 5
+numpy_lr: 0.05
+deep_hidden: [256, 256, 256, 256]
+ablation_epochs: 5
+seeds: 3

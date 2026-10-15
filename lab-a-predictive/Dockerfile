@@ -14,6 +14,7 @@ COPY common common
 # Every package listed in pyproject.toml must be present for pip to build the project.
 COPY lab-a-predictive/src lab-a-predictive/src
 COPY lab-b-nlp-llm/src lab-b-nlp-llm/src
+COPY lab-c-vision/src lab-c-vision/src
 RUN pip install --no-cache-dir ".[lab-a]"
 COPY lab-a-predictive/configs lab-a-predictive/configs
 ARG EXPORT_CONFIG=lab-a-predictive/configs/a5_export.yaml
@@ -31,7 +32,8 @@ COPY pyproject.toml README.md ./
 COPY common common
 COPY lab-a-predictive/src lab-a-predictive/src
 COPY lab-b-nlp-llm/src lab-b-nlp-llm/src
-RUN pip install --no-cache-dir ".[serve]" && rm -rf common lab-a-predictive lab-b-nlp-llm
+COPY lab-c-vision/src lab-c-vision/src
+RUN pip install --no-cache-dir ".[serve]" && rm -rf common lab-a-predictive lab-b-nlp-llm lab-c-vision
 COPY --from=trainer /models /app/models
 ENV MODEL_DIR=/app/models PYTHONUNBUFFERED=1
 USER app

@@ -1,0 +1,11 @@
+experiment: c3_smoke
+seed: 0
+output_dir: runs/smoke
+dataset: synthetic_shapes
+variants: [none, flip+crop, flip+crop+mixup]
+fractions: [0.5, 1.0]
+epochs: {0.5: 4, 1.0: 3}
+width: 8
+batch_size: 64
+gap_sample: 200
+bootstrap_resamples: 100

@@ -16,11 +16,11 @@ jobs:
           cache: pip
       - name: Install (CPU-only PyTorch first, so pip does not pull the CUDA build)
         run: |
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[dev,lab-a,lab-b]"
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev,lab-a,lab-b,lab-c]"
       - run: ruff check .
       - run: ruff format --check .
-      - run: mypy common lab-a-predictive/src lab-b-nlp-llm/src
+      - run: mypy common lab-a-predictive/src lab-b-nlp-llm/src lab-c-vision/src
 
   test:
     runs-on: ubuntu-latest
@@ -37,14 +37,16 @@ jobs:
           cache: pip
       - name: Install (CPU-only PyTorch first, so pip does not pull the CUDA build)
         run: |
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[dev,lab-a,lab-b]"
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev,lab-a,lab-b,lab-c]"
       - name: Cache Hugging Face models used by the `hf` tests
         uses: actions/cache@v4
         with:
-          path: ~/.cache/huggingface
-          key: hf-${{ hashFiles('tests/lab_b/test_hf_models.py') }}
-      - run: pytest --cov=airlab --cov=lab_a --cov=lab_b --cov-report=term-missing
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/torch
+          key: hf-${{ hashFiles('tests/lab_b/test_hf_models.py', 'tests/lab_c/test_experiments_smoke.py') }}
+      - run: pytest --cov=airlab --cov=lab_a --cov=lab_b --cov=lab_c --cov-report=term-missing
       - name: Smoke experiments (CLI entry points; reports go to the git-ignored runs/smoke)
         run: |
           python -m lab_a.baseline   --config lab-a-predictive/configs/baseline_smoke.yaml
@@ -55,6 +57,10 @@ jobs:
           python -m lab_b.classification  --config lab-b-nlp-llm/configs/b2_smoke.yaml
           python -m lab_b.search          --config lab-b-nlp-llm/configs/b3_smoke.yaml
           python -m lab_b.rag             --config lab-b-nlp-llm/configs/b4_smoke.yaml
+          python -m lab_c.fundamentals    --config lab-c-vision/configs/c1_smoke.yaml
+          python -m lab_c.transfer        --config lab-c-vision/configs/c2_smoke.yaml
+          python -m lab_c.augmentation    --config lab-c-vision/configs/c3_smoke.yaml
+          python -m lab_c.interpret       --config lab-c-vision/configs/c5_smoke.yaml
 
   docker:
     runs-on: ubuntu-latest

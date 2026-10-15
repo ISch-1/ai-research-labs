@@ -1,0 +1,54 @@
+experiment,dataset,model,fold,metric,value
+c1_fundamentals,fashion_mnist,NumPy,test,accuracy,0.8614
+c1_fundamentals,fashion_mnist,PyTorch,test,accuracy,0.8614
+c1_fundamentals,fashion_mnist / Activation,relu,0,accuracy,0.8805
+c1_fundamentals,fashion_mnist / Activation,relu,1,accuracy,0.8811
+c1_fundamentals,fashion_mnist / Activation,relu,2,accuracy,0.8819
+c1_fundamentals,fashion_mnist / Activation,gelu,0,accuracy,0.8851
+c1_fundamentals,fashion_mnist / Activation,gelu,1,accuracy,0.8839
+c1_fundamentals,fashion_mnist / Activation,gelu,2,accuracy,0.8868
+c1_fundamentals,fashion_mnist / Activation,tanh,0,accuracy,0.8794
+c1_fundamentals,fashion_mnist / Activation,tanh,1,accuracy,0.8797
+c1_fundamentals,fashion_mnist / Activation,tanh,2,accuracy,0.8783
+c1_fundamentals,fashion_mnist / Activation,sigmoid,0,accuracy,0.8506
+c1_fundamentals,fashion_mnist / Activation,sigmoid,1,accuracy,0.8587
+c1_fundamentals,fashion_mnist / Activation,sigmoid,2,accuracy,0.8544
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),PyTorch default,0,accuracy,0.8805
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),PyTorch default,1,accuracy,0.8811
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),PyTorch default,2,accuracy,0.8819
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),"N(0, 0.01²)",0,accuracy,0.8689
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),"N(0, 0.01²)",1,accuracy,0.8673
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),"N(0, 0.01²)",2,accuracy,0.8658
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),Xavier,0,accuracy,0.8889
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),Xavier,1,accuracy,0.8877
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),Xavier,2,accuracy,0.8872
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),He,0,accuracy,0.8872
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),He,1,accuracy,0.8867
+c1_fundamentals,fashion_mnist / Initialisation (ReLU),He,2,accuracy,0.8866
+c1_fundamentals,fashion_mnist / Optimiser,SGD,0,accuracy,0.8411
+c1_fundamentals,fashion_mnist / Optimiser,SGD,1,accuracy,0.8403
+c1_fundamentals,fashion_mnist / Optimiser,SGD,2,accuracy,0.8407
+c1_fundamentals,fashion_mnist / Optimiser,SGD + Nesterov momentum,0,accuracy,0.8853
+c1_fundamentals,fashion_mnist / Optimiser,SGD + Nesterov momentum,1,accuracy,0.8854
+c1_fundamentals,fashion_mnist / Optimiser,SGD + Nesterov momentum,2,accuracy,0.8826
+c1_fundamentals,fashion_mnist / Optimiser,Adam,0,accuracy,0.8805
+c1_fundamentals,fashion_mnist / Optimiser,Adam,1,accuracy,0.8811
+c1_fundamentals,fashion_mnist / Optimiser,Adam,2,accuracy,0.8819
+c1_fundamentals,fashion_mnist / Optimiser,AdamW (weight decay 0.05),0,accuracy,0.8824
+c1_fundamentals,fashion_mnist / Optimiser,AdamW (weight decay 0.05),1,accuracy,0.882
+c1_fundamentals,fashion_mnist / Optimiser,AdamW (weight decay 0.05),2,accuracy,0.8806
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,none,0,accuracy,0.8805
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,none,1,accuracy,0.8811
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,none,2,accuracy,0.8819
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,batch norm,0,accuracy,0.8958
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,batch norm,1,accuracy,0.8975
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,batch norm,2,accuracy,0.8966
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,dropout 0.2,0,accuracy,0.8771
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,dropout 0.2,1,accuracy,0.874
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,dropout 0.2,2,accuracy,0.8735
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,dropout 0.5,0,accuracy,0.8588
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,dropout 0.5,1,accuracy,0.8552
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,dropout 0.5,2,accuracy,0.8573
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,batch norm + dropout 0.2,0,accuracy,0.8872
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,batch norm + dropout 0.2,1,accuracy,0.8886
+c1_fundamentals,fashion_mnist / Normalisation & regularisation,batch norm + dropout 0.2,2,accuracy,0.8862

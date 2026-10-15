@@ -1,0 +1,10 @@
+experiment: c3_augmentation
+seed: 42
+dataset: cifar10
+variants: [none, flip+crop, flip+crop+color, flip+crop+cutout, flip+crop+mixup, flip+crop+cutmix]
+fractions: [0.1, 0.25, 1.0]
+epochs: {0.1: 40, 0.25: 25, 1.0: 15}   # fewer images -> more epochs (comparable number of updates)
+width: 32
+lr: 0.002
+batch_size: 128
+gap_sample: 5000

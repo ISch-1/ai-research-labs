@@ -232,7 +232,7 @@ def pets_section(cfg: InterpretConfig, out: Outputs) -> tuple[list[str], list]:
     ]
 
     names = [c.replace("_", " ") for c in test.classes]
-    fig, axes = plt.subplots(cfg.n_shown, 4, figsize=(8, 2.1 * cfg.n_shown))
+    fig, axes = plt.subplots(cfg.n_shown, 4, figsize=(8, 2.1 * cfg.n_shown), squeeze=False)
     for r in range(cfg.n_shown):
         img = test.images[idx[r]]
         label = f"pred: {names[target[r]]}" + (

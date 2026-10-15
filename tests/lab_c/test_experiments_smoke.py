@@ -94,3 +94,15 @@ def test_transfer_errors_and_maps_with_a_small_pretrained_model(tmp_path):
         )
     )
     assert "Deletion AUC" in i
+
+
+def test_augmentation_with_a_single_variant(tmp_path):
+    """What one CI shard runs: a single recipe (one-row figure grid)."""
+    cfg = load_config(
+        CONFIGS / "c3_smoke.yaml",
+        augmentation.AugmentationConfig,
+        output_dir=tmp_path,
+        variants=["flip+crop"],
+        fractions=[1.0],
+    )
+    _check(tmp_path, cfg.experiment, augmentation.run(cfg))

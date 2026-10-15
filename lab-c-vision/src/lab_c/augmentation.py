@@ -148,7 +148,7 @@ def run(cfg: AugmentationConfig) -> str:
         # what each recipe does to a batch
         g = torch.Generator().manual_seed(cfg.seed)
         sample = full.images[:8].float() / 255
-        fig, axes = plt.subplots(len(cfg.variants), 8, figsize=(8, 1.05 * len(cfg.variants)))
+        fig, axes = plt.subplots(len(cfg.variants), 8, figsize=(8, 1.05 * len(cfg.variants)), squeeze=False)
         for row, variant in enumerate(cfg.variants):
             xa, _ = augment(sample, full.labels[:8], variant, full.n_classes, g)
             for c in range(8):

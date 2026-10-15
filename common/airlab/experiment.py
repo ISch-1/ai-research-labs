@@ -57,7 +57,7 @@ def host_description() -> str:
                 break
     except OSError:
         pass
-    if platform.system() == "Windows":
+    if sys.platform == "win32":  # lets mypy skip winreg on other platforms
         try:
             import winreg
 

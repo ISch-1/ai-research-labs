@@ -13,5 +13,7 @@ models-smoke
 .ruff_cache
 lab-a-predictive/reports
 lab-a-predictive/notebooks
-lab-b-nlp-llm
+lab-b-nlp-llm/reports
+lab-b-nlp-llm/notebooks
+lab-b-nlp-llm/annotations
 lab-c-vision

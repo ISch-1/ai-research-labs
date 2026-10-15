@@ -1,0 +1,90 @@
+# Long-running experiments on GitHub-hosted runners, started by hand:
+#
+#   gh workflow run experiments.yml --ref <branch> -f experiment=b2_classification
+#
+# B2 runs one shard per dataset in parallel; each shard caches its predictions and
+# timings, and the `report` job rebuilds the full report from those caches (no model
+# is downloaded there). Download the `b2_classification-report` artifact and copy its
+# contents into lab-b-nlp-llm/reports/ to update the repository.
+name: Experiments
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiment:
+        description: Experiment to run
+        type: choice
+        options: [b2_classification]
+        default: b2_classification
+
+env:
+  AIRLAB_TRACKING: "off"
+  AIRLAB_DATA_DIR: ${{ github.workspace }}/data
+  HF_HUB_DISABLE_PROGRESS_BARS: "1"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  shard:
+    name: ${{ inputs.experiment }} / ${{ matrix.dataset }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 340  # GitHub's hard limit for a job is 360
+    strategy:
+      fail-fast: false
+      matrix:
+        dataset: [ag_news, sst2, emotion]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install (CPU-only PyTorch)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[lab-b]"
+      - name: Run ${{ matrix.dataset }}
+        run: >
+          python -m lab_b.classification
+          --config lab-b-nlp-llm/configs/${{ inputs.experiment }}.yaml
+          --set "datasets=[${{ matrix.dataset }}]"
+          --set "experiment=${{ inputs.experiment }}_${{ matrix.dataset }}"
+          --set output_dir=runs/shards
+      - name: Upload predictions and timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cache-${{ matrix.dataset }}
+          path: data/cache/b2
+          if-no-files-found: error
+          retention-days: 14
+
+  report:
+    needs: shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install (CPU-only PyTorch)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[lab-b]"
+      - name: Collect the shards' caches
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cache-*
+          path: data/cache/b2
+          merge-multiple: true
+      - name: Build the full report from the caches
+        run: >
+          python -m lab_b.classification
+          --config lab-b-nlp-llm/configs/${{ inputs.experiment }}.yaml
+          --set output_dir=out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.experiment }}-report
+          path: out
+          retention-days: 30

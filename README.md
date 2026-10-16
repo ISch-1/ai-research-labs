@@ -15,7 +15,7 @@
 |---|---|---|
 | [**A — Predictive & Statistical Modeling**](lab-a-predictive/) | Do complex models really beat linear ones on tabular data? Classical vs. ML vs. neural forecasting? Which anomaly detector, and how stable are the clusters? Served via a typed FastAPI + Docker service. | ✅ Done |
 | [**B — NLP & LLM Research**](lab-b-nlp-llm/) | TF-IDF vs. embeddings vs. fine-tuning vs. prompting. How good is a RAG system, really — does it abstain, can it be poisoned, and at what cost and latency? Runs on a laptop CPU or on GitHub Actions. | ✅ Done |
-| [**C — Computer Vision Research**](lab-c-vision/) | From a NumPy perceptron to transfer learning: what do augmentation and pre-training buy, and what is the model actually looking at? | ⚪ Planned |
+| [**C — Computer Vision Research**](lab-c-vision/) | From a NumPy perceptron to transfer learning: what do augmentation and pre-training buy, why can fine-tuning lose to a frozen backbone, and is an attribution map faithful to what the model uses? | 🟡 In progress |
 
 ---
 

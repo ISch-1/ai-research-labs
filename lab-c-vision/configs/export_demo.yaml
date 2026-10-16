@@ -1,0 +1,15 @@
+experiment: export_demo
+seed: 42
+output_dir: demos/pets-gradcam
+pets:   # must match c2_transfer.yaml so the cached model is reused
+  dataset: pets
+  image_size: 160
+  val_fraction: 0.1
+  scratch_width: 32
+  scratch_input: 112
+  scratch: {epochs: 20, lr: 0.002, batch_size: 64, augment: resized+flip+color}
+  finetune: [mobilenetv3_small_100, resnet18, efficientnet_b0]
+  finetune_train: {epochs: 5, lr: 0.0003, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}
+  lpft_train: {epochs: 3, lr: 0.0001, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}   # head starts from the linear probe
+model: efficientnet_b0   # the best Pets model (C2) and the one C4 analyses
+mode: lpft_bn

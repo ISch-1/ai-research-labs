@@ -1,0 +1,7 @@
+# Gradio itself comes from `sdk_version` in README.md. CPU-only PyTorch keeps the image small.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.4
+timm>=1.0
+safetensors>=0.4
+numpy
+pillow

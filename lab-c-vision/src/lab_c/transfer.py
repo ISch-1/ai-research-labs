@@ -83,6 +83,8 @@ class CifarConfig(BaseModel):
 
 class PetsConfig(BaseModel):
     dataset: str = "pets"
+    include_scratch: bool = True
+    ft_modes: list[str] | None = None  # subset of naive / lpft / lpft_bn; None = all configured
     image_size: int = 160
     val_fraction: float = 0.1
     max_train: int | None = None
@@ -217,7 +219,8 @@ FT_MODES = {"naive": "fine-tuned", "lpft": "LP-FT", "lpft_bn": "LP-FT, frozen BN
 
 
 def finetune_modes(pc: PetsConfig) -> list[str]:
-    return ["naive"] + (["lpft", "lpft_bn"] if pc.lpft_train else [])
+    available = ["naive"] + (["lpft", "lpft_bn"] if pc.lpft_train else [])
+    return [m for m in available if pc.ft_modes is None or m in pc.ft_modes]
 
 
 def _recipe(pc: PetsConfig, mode: str) -> TrainConfig | None:
@@ -360,16 +363,17 @@ def part_pets(pc: PetsConfig, cfg: TransferConfig, out: Outputs) -> tuple[list[s
     n_classes = train.n_classes
     res: dict[str, dict[str, Any]] = {}
 
-    model, hist = scratch_cnn(pc, train, n_classes)
-    res["SmallCNN from scratch"] = {
-        "pred": predict(model, test).argmax(1).numpy(),
-        "train_s": hist.train_seconds,
-        "trainable": n_params(model),
-        "total": n_params(model),
-        "img_s": throughput(model, test),
-        "features": embed_scratch(model, test),
-        "note": f"{pc.scratch.epochs} epochs at {pc.scratch_input}px",
-    }
+    if pc.include_scratch:
+        model, hist = scratch_cnn(pc, train, n_classes)
+        res["SmallCNN from scratch"] = {
+            "pred": predict(model, test).argmax(1).numpy(),
+            "train_s": hist.train_seconds,
+            "trainable": n_params(model),
+            "total": n_params(model),
+            "img_s": throughput(model, test),
+            "features": embed_scratch(model, test),
+            "note": f"{pc.scratch.epochs} epochs at {pc.scratch_input}px",
+        }
     for name in pc.probe:
         res[f"{name} · linear probe"] = linear_probe(name, pc, train, val, test, cfg.seed)
     for mode in finetune_modes(pc):
@@ -461,7 +465,7 @@ def part_pets(pc: PetsConfig, cfg: TransferConfig, out: Outputs) -> tuple[list[s
 
     # t-SNE: scratch features vs. the strongest frozen backbone's features
     probes = [k for k in ranking if "linear probe" in k]
-    if probes and cfg.tsne_points:
+    if probes and cfg.tsne_points and "SmallCNN from scratch" in res:
         rng = np.random.default_rng(cfg.seed)
         idx = rng.choice(len(test), min(cfg.tsne_points, len(test)), replace=False)
         fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))

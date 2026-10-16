@@ -14,7 +14,7 @@ on:
       experiment:
         description: Experiment to run
         type: choice
-        options: [b2_classification, c3_augmentation, c5_shortcut]
+        options: [b2_classification, c3_augmentation, c5_shortcut, c2_finetune_bn]
         default: c3_augmentation
 
 env:
@@ -34,10 +34,12 @@ jobs:
       cache: ${{ steps.plan.outputs.cache }}
       extra: ${{ steps.plan.outputs.extra }}
       args: ${{ steps.plan.outputs.args }}
+      report: ${{ steps.plan.outputs.report }}
       reports: ${{ steps.plan.outputs.reports }}
     steps:
       - id: plan
         run: |
+          echo "report=true" >> "$GITHUB_OUTPUT"
           case "${{ inputs.experiment }}" in
             b2_classification)
               echo "module=lab_b.classification" >> "$GITHUB_OUTPUT"
@@ -66,6 +68,18 @@ jobs:
               echo "cache=data/cache/lab_c/models" >> "$GITHUB_OUTPUT"
               echo "extra=lab-c" >> "$GITHUB_OUTPUT"
               echo "reports=lab-c-vision/reports" >> "$GITHUB_OUTPUT" ;;
+            c2_finetune_bn)
+              # Only the C2 models added last (LP-FT with frozen BatchNorm + the fine-tuning
+              # diagnostic); C2's report is rebuilt where the rest of its models are cached.
+              echo "module=lab_c.transfer" >> "$GITHUB_OUTPUT"
+              echo "config=lab-c-vision/configs/c2_transfer.yaml" >> "$GITHUB_OUTPUT"
+              echo "key=pets.finetune" >> "$GITHUB_OUTPUT"
+              echo 'shards=["efficientnet_b0", "resnet18", "mobilenetv3_small_100"]' >> "$GITHUB_OUTPUT"
+              echo "args=--set cifar=null --set pets.probe=[] --set pets.include_scratch=false --set pets.ft_modes=[lpft_bn] --set tsne_points=0 --set diagnostic_model=null" >> "$GITHUB_OUTPUT"
+              echo "cache=data/cache/lab_c/models" >> "$GITHUB_OUTPUT"
+              echo "extra=lab-c" >> "$GITHUB_OUTPUT"
+              echo "reports=lab-c-vision/reports" >> "$GITHUB_OUTPUT"
+              echo "report=false" >> "$GITHUB_OUTPUT" ;;
             *) echo "unknown experiment" && exit 1 ;;
           esac
 
@@ -91,8 +105,11 @@ jobs:
       - name: Run ${{ matrix.shard }}
         run: |
           SHARD_ARGS=()
+          if [ "${{ inputs.experiment }}" = "c2_finetune_bn" ] && [ "${{ matrix.shard }}" = "efficientnet_b0" ]; then
+            SHARD_ARGS+=(--set diagnostic_model=efficientnet_b0)
+          fi
           if [ -n "${{ needs.plan.outputs.key }}" ]; then
-            SHARD_ARGS=(--set "${{ needs.plan.outputs.key }}=[${{ matrix.shard }}]" --set "experiment=${{ inputs.experiment }}_shard${{ strategy.job-index }}")
+            SHARD_ARGS+=(--set "${{ needs.plan.outputs.key }}=[${{ matrix.shard }}]" --set "experiment=${{ inputs.experiment }}_shard${{ strategy.job-index }}")
           fi
           python -m ${{ needs.plan.outputs.module }} --config ${{ needs.plan.outputs.config }} ${{ needs.plan.outputs.args }} "${SHARD_ARGS[@]}" --set output_dir=runs/shards
       - name: Upload what the shard computed
@@ -106,6 +123,7 @@ jobs:
 
   report:
     needs: [plan, shard]
+    if: needs.plan.outputs.report == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:

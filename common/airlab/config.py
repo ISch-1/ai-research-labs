@@ -25,10 +25,20 @@ class ExperimentConfig(BaseModel):
 
 
 def load_config(path: str | Path, model: type[C], **overrides: Any) -> C:
-    """Read a YAML file into ``model``; keyword overrides win over the file."""
+    """Read a YAML file into ``model``; keyword overrides win over the file.
+
+    Dotted keys reach into nested sections: ``{"pets.finetune": ["resnet18"]}``.
+    """
     with Path(path).open(encoding="utf-8") as fh:
         raw = yaml.safe_load(fh) or {}
-    raw.update(overrides)
+    for key, value in overrides.items():
+        *parents, leaf = key.split(".")
+        node = raw
+        for part in parents:
+            if not isinstance(node.get(part), dict):
+                node[part] = {}
+            node = node[part]
+        node[leaf] = value
     return model.model_validate(raw)
 
 

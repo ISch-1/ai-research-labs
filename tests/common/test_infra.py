@@ -104,3 +104,19 @@ def test_host_description_names_cpu_count():
     from airlab.experiment import host_description
 
     assert f"{os.cpu_count()} logical CPUs" in host_description()
+
+
+def test_load_config_dotted_overrides_reach_nested_sections(tmp_path):
+    from pydantic import BaseModel
+
+    class Inner(BaseModel):
+        a: int = 1
+        b: list[str] = []
+
+    class Outer(ExperimentConfig):
+        inner: Inner = Inner()
+
+    path = tmp_path / "c.yaml"
+    path.write_text("experiment: demo\ninner: {a: 5}\n")
+    cfg = load_config(path, Outer, **{"inner.b": ["x"]})
+    assert cfg.inner.a == 5 and cfg.inner.b == ["x"]

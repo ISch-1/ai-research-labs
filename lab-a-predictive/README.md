@@ -55,6 +55,9 @@
 
 ![CD diagram](reports/figures/a4_benchmark/cc18_cd.png)
 
+The full write-up — questions, setup, results with CIs and limitations — is the
+[Lab A technical report](../docs/reports/lab-a-predictive.md).
+
 ## Modules
 
 | Module | Question | Code | Report |

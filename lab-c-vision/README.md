@@ -65,6 +65,9 @@
   images. Grad-CAM exposes it: 10.5% of its attention falls on a patch covering 2.4% of the image,
   vs. 0.7% for the clean model.
 
+The full write-up — questions, setup, results with CIs and limitations — is the
+[Lab C technical report](../docs/reports/lab-c-vision.md).
+
 ## Modules
 
 | Module | Question | Code | Report |
@@ -74,6 +77,7 @@
 | C3 | Augmentation recipes × data size | [`augmentation.py`](src/lab_c/augmentation.py), [`augment.py`](src/lab_c/augment.py) | [C3](reports/c3_augmentation.md) |
 | C4 | Confusions, confident errors, calibration, robustness to corruptions | [`errors.py`](src/lab_c/errors.py) | [C4](reports/c4_errors.md) |
 | C5 | Saliency, Integrated Gradients, Grad-CAM; deletion-test faithfulness; shortcut learning | [`interpret.py`](src/lab_c/interpret.py) | [C5](reports/c5_interpret.md) |
+| Demo | The best Pets model with calibrated probabilities and attribution maps (Gradio) | [`export.py`](src/lab_c/export.py), [`demos/pets-gradcam`](../demos/pets-gradcam/) | [model card](../docs/model-cards/pets-efficientnet-b0.md) |
 
 ## Methodology
 
@@ -101,6 +105,7 @@ python -m lab_c.fundamentals --config lab-c-vision/configs/c1_fundamentals.yaml 
 python -m lab_c.transfer     --config lab-c-vision/configs/c2_transfer.yaml       # ~3 h on CPU
 python -m lab_c.errors       --config lab-c-vision/configs/c4_errors.yaml         # reuses C2's models
 python -m lab_c.interpret    --config lab-c-vision/configs/c5_interpret.yaml
+python -m lab_c.export       --config lab-c-vision/configs/export_demo.yaml      # weights for the demo
 # long runs on GitHub Actions instead (parallel jobs):
 gh workflow run experiments.yml -f experiment=c3_augmentation
 ```

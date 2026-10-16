@@ -47,6 +47,9 @@ dominates the Pareto frontier for latency; the 1.5B model is more accurate but ~
 token (≈5 vs. ≈15 tokens/s), and every extra passage adds prefill time before the first token.
 
 
+The full write-up — questions, setup, results with CIs and limitations — is the
+[Lab B technical report](../docs/reports/lab-b-nlp-llm.md).
+
 ## Modules
 
 | Module | Question | Code | Report |

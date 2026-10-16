@@ -1,0 +1,31 @@
+experiment,dataset,model,fold,metric,value
+c4_errors,pets,"efficientnet_b0 · LP-FT, frozen BN",test,ece_raw,0.1502679612058065
+c4_errors,pets,"efficientnet_b0 · LP-FT, frozen BN",test,ece_calibrated,0.014515510897572761
+c4_errors,pets,"efficientnet_b0 · LP-FT, frozen BN",test,temperature,0.5973545908927917
+c4_errors,pets,SmallCNN (scratch),test,ece_raw,0.08586124054789054
+c4_errors,pets,SmallCNN (scratch),test,ece_calibrated,0.025210241740683696
+c4_errors,pets,SmallCNN (scratch),test,temperature,0.674332857131958
+c4_errors,pets/gaussian_noise,"efficientnet_b0 · LP-FT, frozen BN",1,accuracy,0.8612701296806335
+c4_errors,pets/gaussian_noise,SmallCNN (scratch),1,accuracy,0.17307168245315552
+c4_errors,pets/gaussian_noise,"efficientnet_b0 · LP-FT, frozen BN",2,accuracy,0.7773235440254211
+c4_errors,pets/gaussian_noise,SmallCNN (scratch),2,accuracy,0.10684110224246979
+c4_errors,pets/gaussian_noise,"efficientnet_b0 · LP-FT, frozen BN",3,accuracy,0.4993186295032501
+c4_errors,pets/gaussian_noise,SmallCNN (scratch),3,accuracy,0.05260289087891579
+c4_errors,pets/blur,"efficientnet_b0 · LP-FT, frozen BN",1,accuracy,0.8814390897750854
+c4_errors,pets/blur,SmallCNN (scratch),1,accuracy,0.23058053851127625
+c4_errors,pets/blur,"efficientnet_b0 · LP-FT, frozen BN",2,accuracy,0.7969474196434021
+c4_errors,pets/blur,SmallCNN (scratch),2,accuracy,0.10520578175783157
+c4_errors,pets/blur,"efficientnet_b0 · LP-FT, frozen BN",3,accuracy,0.48514580726623535
+c4_errors,pets/blur,SmallCNN (scratch),3,accuracy,0.04306350648403168
+c4_errors,pets/contrast,"efficientnet_b0 · LP-FT, frozen BN",1,accuracy,0.8896157145500183
+c4_errors,pets/contrast,SmallCNN (scratch),1,accuracy,0.19269555807113647
+c4_errors,pets/contrast,"efficientnet_b0 · LP-FT, frozen BN",2,accuracy,0.8528209328651428
+c4_errors,pets/contrast,SmallCNN (scratch),2,accuracy,0.0883074402809143
+c4_errors,pets/contrast,"efficientnet_b0 · LP-FT, frozen BN",3,accuracy,0.7767783999443054
+c4_errors,pets/contrast,SmallCNN (scratch),3,accuracy,0.034069228917360306
+c4_errors,pets/dark,"efficientnet_b0 · LP-FT, frozen BN",1,accuracy,0.8983374238014221
+c4_errors,pets/dark,SmallCNN (scratch),1,accuracy,0.22621968388557434
+c4_errors,pets/dark,"efficientnet_b0 · LP-FT, frozen BN",2,accuracy,0.8855273723602295
+c4_errors,pets/dark,SmallCNN (scratch),2,accuracy,0.16762059926986694
+c4_errors,pets/dark,"efficientnet_b0 · LP-FT, frozen BN",3,accuracy,0.8356500267982483
+c4_errors,pets/dark,SmallCNN (scratch),3,accuracy,0.05396565794944763

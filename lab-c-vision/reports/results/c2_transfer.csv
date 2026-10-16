@@ -1,0 +1,59 @@
+experiment,dataset,model,fold,metric,value
+c2_transfer,cifar10,MLP,test,accuracy,0.5536
+c2_transfer,cifar10,SmallCNN,test,accuracy,0.8544
+c2_transfer,pets,SmallCNN from scratch,test,accuracy,0.2425729081493595
+c2_transfer,pets,SmallCNN from scratch,test,train_s,1810.3044309000106
+c2_transfer,pets,SmallCNN from scratch,test,images_per_s,156.83729747574404
+c2_transfer,pets,SmallCNN from scratch,test,trainable_params,292229.0
+c2_transfer,pets,resnet18 · linear probe,test,accuracy,0.8590896702098665
+c2_transfer,pets,resnet18 · linear probe,test,train_s,30.447789633845396
+c2_transfer,pets,resnet18 · linear probe,test,images_per_s,118.091219654949
+c2_transfer,pets,resnet18 · linear probe,test,trainable_params,18981.0
+c2_transfer,pets,mobilenetv3_small_100 · linear probe,test,accuracy,0.819024257290815
+c2_transfer,pets,mobilenetv3_small_100 · linear probe,test,train_s,7.501650591037031
+c2_transfer,pets,mobilenetv3_small_100 · linear probe,test,images_per_s,568.6450033690842
+c2_transfer,pets,mobilenetv3_small_100 · linear probe,test,trainable_params,37925.0
+c2_transfer,pets,efficientnet_b0 · linear probe,test,accuracy,0.9035159443990188
+c2_transfer,pets,efficientnet_b0 · linear probe,test,train_s,38.71584705003493
+c2_transfer,pets,efficientnet_b0 · linear probe,test,images_per_s,85.98828604450935
+c2_transfer,pets,efficientnet_b0 · linear probe,test,trainable_params,47397.0
+c2_transfer,pets,deit_tiny_patch16_224 · linear probe,test,accuracy,0.8694467157263559
+c2_transfer,pets,deit_tiny_patch16_224 · linear probe,test,train_s,31.035422617332344
+c2_transfer,pets,deit_tiny_patch16_224 · linear probe,test,images_per_s,109.41226254196502
+c2_transfer,pets,deit_tiny_patch16_224 · linear probe,test,trainable_params,7141.0
+c2_transfer,pets,mobilenetv3_small_100 · fine-tuned,test,accuracy,0.6996456800218043
+c2_transfer,pets,mobilenetv3_small_100 · fine-tuned,test,train_s,175.89325109998754
+c2_transfer,pets,mobilenetv3_small_100 · fine-tuned,test,images_per_s,520.4944697437063
+c2_transfer,pets,mobilenetv3_small_100 · fine-tuned,test,trainable_params,1555781.0
+c2_transfer,pets,resnet18 · fine-tuned,test,accuracy,0.7928590896702099
+c2_transfer,pets,resnet18 · fine-tuned,test,train_s,633.8948988000193
+c2_transfer,pets,resnet18 · fine-tuned,test,images_per_s,118.976683405219
+c2_transfer,pets,resnet18 · fine-tuned,test,trainable_params,11195493.0
+c2_transfer,pets,efficientnet_b0 · fine-tuned,test,accuracy,0.8043063505042246
+c2_transfer,pets,efficientnet_b0 · fine-tuned,test,train_s,1016.9806834999908
+c2_transfer,pets,efficientnet_b0 · fine-tuned,test,images_per_s,85.65910633599661
+c2_transfer,pets,efficientnet_b0 · fine-tuned,test,trainable_params,4054945.0
+c2_transfer,pets,mobilenetv3_small_100 · LP-FT,test,accuracy,0.711092940855819
+c2_transfer,pets,mobilenetv3_small_100 · LP-FT,test,train_s,121.73397990001831
+c2_transfer,pets,mobilenetv3_small_100 · LP-FT,test,images_per_s,539.220384206414
+c2_transfer,pets,mobilenetv3_small_100 · LP-FT,test,trainable_params,1555781.0
+c2_transfer,pets,resnet18 · LP-FT,test,accuracy,0.7865903515944399
+c2_transfer,pets,resnet18 · LP-FT,test,train_s,400.4922498000087
+c2_transfer,pets,resnet18 · LP-FT,test,images_per_s,111.38325075332482
+c2_transfer,pets,resnet18 · LP-FT,test,trainable_params,11195493.0
+c2_transfer,pets,efficientnet_b0 · LP-FT,test,accuracy,0.8432815481057508
+c2_transfer,pets,efficientnet_b0 · LP-FT,test,train_s,635.3073598000046
+c2_transfer,pets,efficientnet_b0 · LP-FT,test,images_per_s,85.28311295072237
+c2_transfer,pets,efficientnet_b0 · LP-FT,test,trainable_params,4054945.0
+c2_transfer,pets,"mobilenetv3_small_100 · LP-FT, frozen BN",test,accuracy,0.794766966475879
+c2_transfer,pets,"mobilenetv3_small_100 · LP-FT, frozen BN",test,train_s,38.15441384600001
+c2_transfer,pets,"mobilenetv3_small_100 · LP-FT, frozen BN",test,images_per_s,497.51485497685053
+c2_transfer,pets,"mobilenetv3_small_100 · LP-FT, frozen BN",test,trainable_params,1555781.0
+c2_transfer,pets,"resnet18 · LP-FT, frozen BN",test,accuracy,0.8563641319160534
+c2_transfer,pets,"resnet18 · LP-FT, frozen BN",test,train_s,150.120699642
+c2_transfer,pets,"resnet18 · LP-FT, frozen BN",test,images_per_s,109.99481649466874
+c2_transfer,pets,"resnet18 · LP-FT, frozen BN",test,trainable_params,11195493.0
+c2_transfer,pets,"efficientnet_b0 · LP-FT, frozen BN",test,accuracy,0.9054238212046879
+c2_transfer,pets,"efficientnet_b0 · LP-FT, frozen BN",test,train_s,171.206995151
+c2_transfer,pets,"efficientnet_b0 · LP-FT, frozen BN",test,images_per_s,87.91604896479261
+c2_transfer,pets,"efficientnet_b0 · LP-FT, frozen BN",test,trainable_params,4054945.0

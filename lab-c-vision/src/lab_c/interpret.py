@@ -105,15 +105,26 @@ def attribute(
     return torch.rand(x.shape[0], *x.shape[2:], generator=g)
 
 
+DELETION_FRACTIONS = (0.0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.35, 0.5)
+
+
 @torch.inference_mode()
 def deletion_curve(
-    model: nn.Module, x: torch.Tensor, target: torch.Tensor, attr: torch.Tensor, steps: int = 10
+    model: nn.Module,
+    x: torch.Tensor,
+    target: torch.Tensor,
+    attr: torch.Tensor,
+    fractions: tuple[float, ...] | list[float] = DELETION_FRACTIONS,
 ) -> np.ndarray:
-    """Probability of ``target`` as the top 0%, 10%, …, 100% of pixels (by ``attr``) are set to 0 (= the mean)."""
+    """Probability of ``target`` as the top fraction of pixels (by ``attr``) is set to 0 (= the mean).
+
+    Fractions are fine at the start because that is where faithful maps differ from
+    random ones: once a third of the image is gone, every ordering has destroyed it.
+    """
     b, _, h, w = x.shape
     order = attr.reshape(b, -1).argsort(dim=1, descending=True)
     probs = []
-    for k in np.linspace(0, h * w, steps + 1).astype(int):
+    for k in (np.asarray(fractions) * h * w).round().astype(int):
         mask = torch.ones(b, h * w)
         mask.scatter_(1, order[:, :k], 0.0)
         xk = x * mask.view(b, 1, h, w)
@@ -173,7 +184,7 @@ class InterpretConfig(ExperimentConfig):
     n_images: int = 100
     n_shown: int = 6
     ig_steps: int = 32
-    deletion_steps: int = 10
+    deletion_fractions: list[float] = Field(default_factory=lambda: list(DELETION_FRACTIONS))
     shortcut: ShortcutConfig | None = Field(default_factory=ShortcutConfig)
 
 
@@ -208,14 +219,16 @@ def pets_section(cfg: InterpretConfig, out: Outputs) -> tuple[list[str], list]:
                 method, model, x[i : i + 16], target[i : i + 16], cfg.ig_steps, cfg.seed + i
             )
             cs.append(
-                deletion_curve(model, x[i : i + 16], target[i : i + 16], a, cfg.deletion_steps)
+                deletion_curve(model, x[i : i + 16], target[i : i + 16], a, cfg.deletion_fractions)
             )
             attrs.append(a)
         curves[method] = np.concatenate(cs)
         shown[method] = torch.cat(attrs)[: cfg.n_shown]
-    auc = {
-        m: curves[m].mean(1) for m in METHODS
-    }  # mean probability along the curve (lower = more faithful)
+    # Each curve is divided by the clean probability, then averaged over the deleted fraction
+    # (trapezoid rule): 1.0 = deleting changed nothing, lower = the map found what matters.
+    fr = np.asarray(cfg.deletion_fractions)
+    relative = {m: curves[m] / np.clip(curves[m][:, :1], 1e-12, None) for m in METHODS}
+    auc = {m: np.trapezoid(relative[m], fr, axis=1) / (fr[-1] - fr[0]) for m in METHODS}
     raw = {m: float(wilcoxon(auc[m], auc["random"]).pvalue) for m in METHODS if m != "random"}
     adj = holm(raw)
     rows = [
@@ -245,18 +258,18 @@ def pets_section(cfg: InterpretConfig, out: Outputs) -> tuple[list[str], list]:
     save(fig, path)
 
     fig, ax = plt.subplots(figsize=(5.5, 4))
-    xs = np.linspace(0, 100, cfg.deletion_steps + 1)
+    xs = 100 * fr
     for m in METHODS:
         ax.plot(
             xs,
-            curves[m].mean(0),
+            relative[m].mean(0),
             marker="o",
             ms=3,
             label=f"{m.replace('_', ' ')} (AUC {auc[m].mean():.3f})",
         )
     ax.set(
         xlabel="% of pixels removed (highest attribution first)",
-        ylabel="probability of predicted class",
+        ylabel="probability of predicted class (÷ clean)",
         title="Deletion test",
     )
     ax.legend(fontsize=8)
@@ -266,9 +279,7 @@ def pets_section(cfg: InterpretConfig, out: Outputs) -> tuple[list[str], list]:
     lines = [
         f"## Attribution maps — {cfg.model} ({cfg.mode}) on Pets",
         "",
-        f"{len(idx)} random test images; each map explains the model's own prediction. Deletion AUC = "
-        "mean probability of the predicted class while removing pixels in the map's order (lower = "
-        "the map found pixels the model actually relies on). Wilcoxon vs. random order, Holm-adjusted.",
+        f"{len(idx)} random test images; each map explains the model's own prediction. Deletion AUC = mean probability of the predicted class, relative to the clean image, while the top 0–50% of pixels in the map's order are replaced by the mean colour (1 = no effect; lower = the map found pixels the model relies on). Wilcoxon vs. random order, Holm-adjusted.",
         "",
         md_table(
             ["Method", "Deletion AUC (mean)", "Holm p vs random"],

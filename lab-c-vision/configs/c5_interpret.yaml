@@ -4,15 +4,15 @@ pets:   # must match c2_transfer.yaml so the cached models are reused
   dataset: pets
   image_size: 160
   val_fraction: 0.1
-  finetune: [resnet18]
+  finetune: [efficientnet_b0]
   finetune_train: {epochs: 5, lr: 0.0003, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}
   lpft_train: {epochs: 3, lr: 0.0001, batch_size: 32, weight_decay: 0.05, label_smoothing: 0.1, augment: resized+flip}   # head starts from the linear probe
-model: resnet18
-mode: lpft
+model: efficientnet_b0   # the best Pets model in C2
+mode: lpft_bn
 n_images: 100
 n_shown: 6
 ig_steps: 32
-deletion_steps: 10
+deletion_fractions: [0.0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.35, 0.5]
 shortcut:
   dataset: cifar10
   patch_size: 5

@@ -25,13 +25,14 @@
   while a logistic regression on frozen ImageNet features reaches 82–90% in under a minute
   (EfficientNet-B0 best, 90.4%). The frozen features separate breeds by themselves (5-NN accuracy
   88.5% vs. 22.7% for the scratch CNN's features).
-- Fine-tuning the whole network on CPU (3–5 epochs) *loses* to that linear probe. Starting from the
-  probe's head (LP-FT) is better than a random head (84.3% vs. 80.4% for EfficientNet) but still
-  below the probe. A one-epoch ablation points at **BatchNorm**: a lower learning rate makes things
-  worse (68.5%), while freezing the BatchNorm statistics recovers most of the gap (87.8%) — the
-  running statistics drift on small augmented batches.
-
-<!-- C2-BN -->
+- Fine-tuning the whole network on CPU (3–5 epochs) at first *lost* to that linear probe: 80.4% with
+  a random head, 84.3% starting from the probe's head (LP-FT). A one-epoch ablation pointed at
+  **BatchNorm**, not the weights: a 10× lower learning rate made things worse (68.7%), while
+  freezing the BatchNorm statistics recovered most of the gap (87.8%) — the running statistics
+  drift on small batches of augmented crops.
+- With that fix, LP-FT with frozen BatchNorm is the best Pets model: EfficientNet-B0 90.5%, tied
+  with its linear probe (McNemar p = 0.61) and +10 points over naive fine-tuning; freezing BatchNorm
+  also lifts LP-FT from 78.7% to 85.6% (ResNet-18) and from 71.1% to 79.5% (MobileNetV3).
 
 **C3 — Data augmentation.**
 - Flip + crop is the best recipe at every data size, and its gain grows as data shrink:
@@ -41,7 +42,28 @@
 - Mixup and CutMix hurt this small CNN at this budget (CutMix −4.4 points with all data): they shrink
   the gap the most, but over-regularise.
 
-<!-- C4-C5 -->
+**C4 — Errors, calibration, robustness** (EfficientNet-B0, LP-FT with frozen BatchNorm, 90.5%).
+- The errors are the ones a person would make: birman ↔ ragdoll (29 confusions), American pit bull ↔
+  Staffordshire bull terrier (26), British shorthair ↔ Russian blue (19); the two bull-terrier
+  breeds are the hardest classes (F1 0.65 and 0.70).
+- The model is *under*-confident — the price of label smoothing: temperature scaling with T = 0.60
+  (fitted on the validation split) cuts the expected calibration error from 0.150 to 0.015 and the
+  NLL from 0.452 to 0.313 without changing a single prediction.
+- It shrugs off low contrast and darkness (78–84% at the strongest severity) but halves under strong
+  noise or blur (~49%); on average it keeps 72% of its clean accuracy vs. 19% for the CNN trained
+  from scratch.
+
+**C5 — Interpretability.**
+- Faithfulness is not the same as plausibility. Grad-CAM produces the most convincing maps (always
+  the animal's face) but, deleting pixels in its order, the prediction falls no faster than with a
+  random order (deletion AUC 0.517 vs. 0.488, p = 0.33): on EfficientNet it works on a 5×5 grid,
+  too coarse for a pixel-level test. Integrated Gradients (0.326) and plain gradients (0.328) find
+  pixels the model really uses (Holm p < 0.0001 vs. random).
+- Shortcut learning: a CNN trained on CIFAR-10 where a 5×5 coloured corner patch reveals the class
+  in 95% of images scores 100% when the patch tells the truth, 3.7% when it lies (it follows the
+  patch 95.6% of the time) and 64.7% without it, vs. a steady ~85% for the same CNN trained on clean
+  images. Grad-CAM exposes it: 10.5% of its attention falls on a patch covering 2.4% of the image,
+  vs. 0.7% for the clean model.
 
 ## Modules
 

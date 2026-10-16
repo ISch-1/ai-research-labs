@@ -15,7 +15,7 @@
 |---|---|---|
 | [**A — Predictive & Statistical Modeling**](lab-a-predictive/) | Do complex models really beat linear ones on tabular data? Classical vs. ML vs. neural forecasting? Which anomaly detector, and how stable are the clusters? Served via a typed FastAPI + Docker service. | ✅ Done |
 | [**B — NLP & LLM Research**](lab-b-nlp-llm/) | TF-IDF vs. embeddings vs. fine-tuning vs. prompting. How good is a RAG system, really — does it abstain, can it be poisoned, and at what cost and latency? Runs on a laptop CPU or on GitHub Actions. | ✅ Done |
-| [**C — Computer Vision Research**](lab-c-vision/) | From a NumPy perceptron to transfer learning: what do augmentation and pre-training buy, why can fine-tuning lose to a frozen backbone, and is an attribution map faithful to what the model uses? | 🟡 In progress |
+| [**C — Computer Vision Research**](lab-c-vision/) | From a NumPy perceptron to transfer learning: what do augmentation and pre-training buy, why can fine-tuning lose to a frozen backbone, and is an attribution map faithful to what the model uses? | ✅ Done |
 
 ---
 
@@ -89,7 +89,7 @@ With `make` available: `make setup`, `make test`, `make lab-a` (all experiments)
 - [x] **Phase 0** — repo, shared toolkit, CI, end-to-end baseline
 - [x] **Phase 1** — Lab A: regression/classification, forecasting, clustering & anomalies, statistical comparison, model-serving API
 - [x] **Phase 2** — Lab B: representations, text classification, semantic search & RAG, LLM evaluation, cost/latency/quality
-- [ ] **Phase 3** — Lab C: perceptron & MLP from scratch, CNNs & transfer learning, augmentation, error analysis, interpretability
+- [x] **Phase 3** — Lab C: perceptron & MLP from scratch, CNNs & transfer learning, augmentation, error analysis, interpretability
 - [ ] **Phase 4** — reports, model cards, hosted demos
 
 ## License

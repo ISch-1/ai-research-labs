@@ -186,7 +186,7 @@ def test_deletion_curve_starts_at_the_clean_probability():
     model = SmallCNN(3, 3, width=4).eval()
     x = torch.randn(3, 3, 8, 8)
     target = torch.tensor([0, 1, 2])
-    curve = deletion_curve(model, x, target, torch.rand(3, 8, 8), steps=4)
+    curve = deletion_curve(model, x, target, torch.rand(3, 8, 8), [0.0, 0.1, 0.25, 0.5, 1.0])
     with torch.no_grad():
         clean = model(x).softmax(1)[torch.arange(3), target].numpy()
     np.testing.assert_allclose(curve[:, 0], clean, rtol=1e-5)

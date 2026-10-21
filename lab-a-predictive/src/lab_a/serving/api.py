@@ -200,7 +200,9 @@ def create_app(model_dir: str | Path | None = None) -> FastAPI:
         n = loaded.meta["n_observations"]
         frame = loaded.model.get_prediction(start=n, end=n + body.horizon - 1).summary_frame(
             alpha=1 - body.level
-        )
+        )[["mean", "pi_lower", "pi_upper"]]
+        if loaded.meta.get("transform") == "log":  # fitted on log(y): back-transform
+            frame = np.exp(frame)
         points = [
             ForecastPoint(
                 date=pd.Timestamp(idx).date().isoformat(),

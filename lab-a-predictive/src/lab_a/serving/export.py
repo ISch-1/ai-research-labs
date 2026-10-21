@@ -140,44 +140,30 @@ def export_tabular(spec: TabularSpec, seed: int) -> tuple[Any, dict[str, Any]]:
 
 
 def export_forecast(spec: ForecastSpec, seed: int) -> tuple[Any, dict[str, Any]]:
-    from statsmodels.tsa.exponential_smoothing.ets import ETSModel
-
-    from lab_a.forecasting import needs_log
+    """AIC-selected ETS, fitted exactly as in A2: on the log scale when the seasonal
+    spread grows with the level. ``transform`` in the metadata tells the API to
+    exponentiate the forecasts (the point forecast is then the median)."""
+    from lab_a.forecasting import fit_ets, needs_log
 
     ts = load_series(spec.series)
     y = ts.y.astype(float)
-    positive = bool((y > 0).all())
-    specs = [
-        {"error": "add", "trend": trend, "damped_trend": damped, "seasonal": seasonal}
-        for trend, damped in [(None, False), ("add", False), ("add", True)]
-        for seasonal in (["add", "mul"] if positive else ["add"])
-    ]
-    best, best_aic, best_spec = None, np.inf, None
-    for s in specs:
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                fit = ETSModel(y, seasonal_periods=ts.season_length, **s).fit(
-                    disp=False, maxiter=2000
-                )
-        except Exception:
-            continue
-        if np.isfinite(fit.aic) and fit.aic < best_aic:
-            best, best_aic, best_spec = fit, fit.aic, s
-    if best is None:
-        raise RuntimeError(f"could not fit ETS to {spec.series}")
+    use_log = needs_log(y.to_numpy(), ts.season_length)
+    try:
+        best, best_spec = fit_ets(np.log(y) if use_log else y, ts.season_length)
+    except RuntimeError as exc:
+        raise RuntimeError(f"could not fit ETS to {spec.series}") from exc
     meta = {
         "kind": "forecast",
         "estimator": "ets",
         "ets_spec": best_spec,
-        "aic": float(best_aic),
+        "transform": "log" if use_log else "none",
+        "aic": float(best.aic),  # on the transformed scale
         "series": ts.name,
         "source": ts.source,
         "frequency": ts.y.index.freqstr,
         "season_length": ts.season_length,
         "last_observation": ts.y.index[-1].isoformat(),
         "n_observations": len(y),
-        "multiplicative_hint": needs_log(y.to_numpy(), ts.season_length),
     }
     return best, meta
 

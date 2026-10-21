@@ -47,15 +47,18 @@ variation; the model has no location data finer than latitude/longitude.
 | | |
 |---|---|
 | Data | Box & Jenkins international airline passengers, 1949–1960 (Rdatasets `AirPassengers`), 144 months |
-| Model | ETS(A, N, M) — additive errors, no trend, multiplicative seasonality — chosen by AIC among 6 state-space specifications |
+| Model | ETS(A, A, M) on log(passengers) — additive errors, additive (undamped) trend, multiplicative seasonality — chosen by AIC among 6 state-space specifications |
 | Output | point forecast and prediction interval (`level`) for `horizon` months after December 1960 |
-| Backtest (A2) | ETS fitted on the log scale: MASE 0.62 over 4 rolling origins, 90% interval coverage 0.85 (slightly under-covering) |
+| Backtest (A2) | same procedure, h = 12, 4 rolling origins (1957–1960): MASE 0.622, sMAPE 4.5%, MAE 18.6, RMSE 22.9, 90% interval coverage 0.85 (slightly under-covering) |
 | Out of scope | forecasting any current series; it is a teaching example of a fitted state-space model |
 
-**Caveat.** The export selects the ETS specification by AIC on the raw scale, and that chose a
-model **without a trend component**: forecasts follow the seasonal pattern around the last level
-instead of continuing the upward trend. A2's backtest selects on the log scale, so its scores do
-not describe this exact model; selecting on the log scale at export would align the two.
+**Specification.** The export fits ETS exactly as A2 does: the seasonal spread of the series
+grows with its level (`needs_log`), so the model is selected and fitted on log(passengers), and
+the API exponentiates the point forecast and the interval bounds (`"transform": "log"` in the
+metadata). The back-transformed point forecast is therefore the median, not the mean, of the
+forecast distribution. The same ETS(A, A, M) specification is selected at every backtest origin
+and on the full series, so the A2 scores describe this model's procedure; forecasts continue the
+upward trend (mean of the second forecast year 594 vs. 529 for the first).
 
 ## `kdd_http` — network-connection anomaly score (Isolation Forest)
 

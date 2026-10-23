@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pet Breed Classifier</title>
+  <meta name="description" content="37 cat and dog breeds with calibrated probabilities and a class-activation map, running in your browser.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <style>
+    :root {
+      --bg: #f7f7f5; --card: #ffffff; --text: #1d1d1b; --muted: #5f5e5a; --line: #e3e2dc;
+      --accent: #3b5bdb; --accent-soft: #e7ecfd; --bar: #3b5bdb; --warn: #b35c00; --bad: #b42318;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #141413; --card: #1f1f1d; --text: #ecebe6; --muted: #a8a69e; --line: #34332f;
+        --accent: #8ea7ff; --accent-soft: #262c45; --bar: #8ea7ff; --warn: #f0a04b; --bad: #ff8a80;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #141413; --card: #1f1f1d; --text: #ecebe6; --muted: #a8a69e; --line: #34332f;
+      --accent: #8ea7ff; --accent-soft: #262c45; --bar: #8ea7ff; --warn: #f0a04b; --bad: #ff8a80;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 1040px; margin: 0 auto; padding: 28px 16px 48px; }
+    h1 { font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+    h2 { font-size: 1rem; margin: 0 0 10px; }
+    p { margin: 0 0 10px; }
+    a { color: var(--accent); }
+    .lede { color: var(--muted); max-width: 72ch; }
+    .facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px; padding: 0; list-style: none; }
+    .facts li { background: var(--accent-soft); border-radius: 999px; padding: 3px 12px; font-size: 0.85rem; }
+    .grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; }
+    @media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+    .drop {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      border: 2px dashed var(--line); border-radius: 10px; padding: 28px 12px; text-align: center;
+      cursor: pointer; transition: border-color .15s, background .15s; min-height: 150px;
+    }
+    .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+    .drop input { display: none; }
+    .drop strong { font-size: 1rem; }
+    .hint { color: var(--muted); font-size: 0.85rem; }
+    .examples { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-top: 14px; }
+    .examples button {
+      padding: 0; border: 2px solid transparent; border-radius: 8px; background: none; cursor: pointer;
+      aspect-ratio: 1; overflow: hidden;
+    }
+    .examples button:hover, .examples button:focus-visible { border-color: var(--accent); outline: none; }
+    .examples img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .views { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    figure { margin: 0; }
+    canvas { width: 100%; aspect-ratio: 1; display: block; border-radius: 8px; background: var(--line); }
+    figcaption { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+    .verdict { font-size: 1.05rem; margin: 14px 0 10px; min-height: 1.6em; }
+    .verdict.unsure { color: var(--warn); }
+    .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+    .bars li { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 3.2rem; gap: 10px; align-items: center; font-size: 0.9rem; }
+    @media (max-width: 480px) { .bars li { grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr) 3rem; } }
+    .bars .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bars .track { display: block; height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; }
+    .bars .fill { display: block; height: 100%; background: var(--bar); border-radius: 999px; width: 0; }
+    .bars .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+    .status { color: var(--muted); font-size: 0.85rem; margin-top: 12px; min-height: 1.4em; }
+    .status.error { color: var(--bad); }
+    .notes { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 760px) { .notes { grid-template-columns: minmax(0, 1fr); } }
+    .notes ul { margin: 0; padding-left: 1.1rem; }
+    .notes li { margin-bottom: 6px; }
+    footer { color: var(--muted); font-size: 0.8rem; margin-top: 22px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Pet breed classifier 🐾</h1>
+  <p class="lede">
+    Upload a photo of a cat or a dog: the model names one of 37 breeds, gives calibrated
+    probabilities and shows which regions support its answer. It runs entirely in your
+    browser — the photo never leaves your device.
+  </p>
+  <ul class="facts" id="facts">
+    <li>EfficientNet-B0 · ImageNet-pretrained, fine-tuned on Oxford-IIIT Pet</li>
+  </ul>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="input-title">
+      <h2 id="input-title">Photo</h2>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="image/*">
+        <strong>Choose a photo or drop it here</strong>
+        <span class="hint">JPEG, PNG or WebP · centre-cropped to a square</span>
+      </label>
+      <p class="hint" style="margin-top:14px">Or try a test image (the last one is a known mistake):</p>
+      <div class="examples" id="examples"></div>
+      <p class="status" id="status" role="status">Loading the model (15 MB)…</p>
+    </section>
+
+    <section class="card" aria-labelledby="result-title">
+      <h2 id="result-title">Prediction</h2>
+      <div class="views">
+        <figure><canvas id="crop" width="160" height="160"></canvas><figcaption>What the model sees (160×160)</figcaption></figure>
+        <figure><canvas id="heat" width="160" height="160"></canvas><figcaption>Evidence for the top breed (class-activation map)</figcaption></figure>
+      </div>
+      <p class="verdict" id="verdict"></p>
+      <ol class="bars" id="bars" aria-label="Top 5 breeds"></ol>
+    </section>
+  </div>
+
+  <div class="notes">
+    <section class="card">
+      <h2>Reading the map</h2>
+      <p>
+        The map is Grad-CAM on the network's last 5×5 feature map. Because the head is global
+        average pooling plus one linear layer, it equals the classic class-activation map and needs no
+        gradients — that is what lets it run in the browser.
+      </p>
+      <p>
+        It shows <em>where</em> the evidence is, coarsely. In the lab's deletion test, Grad-CAM on the
+        network's last block (also 5×5) did not single out the pixels the model relies on better than
+        chance, while Integrated Gradients did; the <a href="https://github.com/ISch-1/ai-research-labs/tree/main/demos/pets-gradcam">Python version</a> of this demo offers both.
+      </p>
+    </section>
+    <section class="card">
+      <h2>Limitations</h2>
+      <ul>
+        <li>It only knows 37 pure breeds: mixed breeds, other animals and objects still get a breed name. Below 50% it says it is unsure.</li>
+        <li>Look-alike breeds are its main errors: birman ↔ ragdoll, American pit bull ↔ Staffordshire bull terrier.</li>
+        <li>Accuracy roughly halves on very noisy or blurred photos.</li>
+        <li>Not for decisions about real animals — see the <a href="https://github.com/ISch-1/ai-research-labs/blob/main/docs/model-cards/pets-efficientnet-b0.md">model card</a>.</li>
+      </ul>
+    </section>
+  </div>
+
+  <footer>
+    Part of <a href="https://github.com/ISch-1/ai-research-labs">ai-research-labs</a> — Lab C, computer vision
+    (<a href="https://github.com/ISch-1/ai-research-labs/blob/main/docs/reports/lab-c-vision.md">technical report</a>).
+    Inference with ONNX Runtime Web. Test images: Oxford-IIIT Pet dataset (Parkhi et al., 2012), CC BY-SA 4.0.
+  </footer>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

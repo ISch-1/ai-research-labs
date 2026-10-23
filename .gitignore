@@ -37,3 +37,7 @@ Thumbs.db
 
 # Demo weights (exported by `python -m lab_c.export`, uploaded to the Space, not to git)
 *.safetensors
+*.onnx
+demos/pets-web/config.json
+demos/pets-web/examples/
+demos/pets-web/examples.json

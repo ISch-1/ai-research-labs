@@ -1,7 +1,7 @@
 # Model card — Pet breed classifier (EfficientNet-B0, LP-FT with frozen BatchNorm)
 
 *Format after Mitchell et al. (2019), "Model cards for model reporting". Demo:
-[live on Hugging Face Spaces](https://huggingface.co/spaces/Iansha/pet-breeds-gradcam) ([code](../../demos/pets-gradcam/)) · Report: [Lab C](../reports/lab-c-vision.md).*
+[live on Hugging Face Spaces](https://huggingface.co/spaces/Iansha/pet-breeds-gradcam) (ONNX in the browser, [code](../../demos/pets-web/); Gradio version in [`demos/pets-gradcam`](../../demos/pets-gradcam/)) · Report: [Lab C](../reports/lab-c-vision.md).*
 
 ## Model details
 
@@ -50,9 +50,10 @@ log-likelihood; per-class F1; accuracy under synthetic corruptions.
 | Most-confused pairs (test errors) | birman ↔ ragdoll 29, American pit bull ↔ Staffordshire bull terrier 26, British shorthair ↔ Russian blue 19 |
 | Strongest corruption (severity 3) | dark 83.6%, low contrast 77.7%, Gaussian noise 49.9%, blur 48.5% |
 
-Attribution maps (as shown in the demo) were evaluated with a deletion test on 100 test images:
-Integrated Gradients are faithful (deletion AUC 0.326 vs. 0.488 for random order, Holm
-p < 0.0001); Grad-CAM is not on this architecture (0.517, p = 0.33).
+Attribution maps were evaluated with a deletion test on 100 test images: Integrated Gradients are
+faithful (deletion AUC 0.326 vs. 0.488 for random order, Holm p < 0.0001); Grad-CAM on the last
+block (a 5×5 grid) is not (0.517, p = 0.33). The in-browser demo shows Grad-CAM on the final 5×5
+feature map, one layer later, which was not tested separately.
 
 ## Training data
 
@@ -65,8 +66,9 @@ validation and temperature fitting, leaving 3,311 for training. About 100 images
 - The model always answers with one of 37 breeds. A mixed-breed dog or an unrelated animal gets a
   confident-looking label; the calibrated probability is the only signal of doubt.
 - The breed labels of the dataset are assigned from photos, not pedigree documents.
-- Uploaded photos may contain people (owners often hold the pet); the demo does not store uploads,
-  but the hosting platform's logs and policies apply.
+- Uploaded photos may contain people (owners often hold the pet). The hosted demo classifies them
+  in the visitor's browser and never uploads them; the Gradio version processes them on whatever
+  machine runs it.
 
 ## Caveats and recommendations
 

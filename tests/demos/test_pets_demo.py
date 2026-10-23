@@ -107,3 +107,50 @@ def test_export_round_trips_into_the_demo(tmp_path):
     x = (test.images[:8].float() / 255 - clf.mean) / clf.std
     with torch.no_grad():
         torch.testing.assert_close(clf.model(x), predict(model, test.subset(np.arange(8))))
+
+
+def _web_export():
+    spec = importlib.util.spec_from_file_location(
+        "pets_web_export", DEMO.parent / "pets-web" / "export_onnx.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_in_browser_cams_equal_grad_cam_on_the_last_feature_map():
+    """Global average pooling + linear head: Grad-CAM needs no gradients at that layer."""
+    torch.manual_seed(0)
+    model = timm.create_model("efficientnet_b0", pretrained=False, num_classes=5).eval()
+    net = _web_export().LogitsAndCams(model)
+    x = torch.randn(1, 3, 64, 64)
+    logits, cams = net(x)
+    torch.testing.assert_close(logits, model(x))
+
+    k = int(logits.argmax())
+    features = model.forward_features(x).detach().requires_grad_(True)
+    model.forward_head(features)[0, k].backward()
+    weights = features.grad.mean(dim=(2, 3), keepdim=True)
+    grad_cam = torch.relu((weights * features).sum(1))[0]
+    h, w = features.shape[-2:]
+    torch.testing.assert_close(torch.relu(cams[0, k]) / (h * w), grad_cam.detach())
+
+
+def test_onnx_export_matches_pytorch(tmp_path):
+    pytest.importorskip("onnx")
+    pytest.importorskip("onnxruntime")
+    from PIL import Image
+
+    model_dir = tmp_path / "model"
+    (model_dir / "examples").mkdir(parents=True)
+    _write_demo_model(model_dir, arch="efficientnet_b0")
+    rng = np.random.default_rng(1)
+    for name in ("cat.jpg", "dog_hard.jpg"):
+        Image.fromarray(rng.integers(0, 255, (70, 90, 3), dtype=np.uint8)).save(
+            model_dir / "examples" / name
+        )
+    out = tmp_path / "web"
+    assert "ONNX Runtime matches PyTorch" in _web_export().export(model_dir, out)
+    assert (out / "model.onnx").exists() and (out / "config.json").exists()
+    assert json.loads((out / "examples.json").read_text()) == ["cat.jpg", "dog_hard.jpg"]

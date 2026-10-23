@@ -80,7 +80,34 @@ def test_forecast(client):
     first = body["points"][0]
     assert first["date"] == "2020-01-01"  # series ends 2019-12
     assert first["lower"] < first["mean"] < first["upper"]
+    assert client.get("/models/synthetic_seasonal").json()["transform"] == "none"
     assert client.post("/forecast/synthetic_seasonal", json={"horizon": 0}).status_code == 422
+
+
+def test_air_passengers_forecast_keeps_its_trend(tmp_path):
+    """Fitted on the log scale (as in A2), the served ETS model must keep the upward trend.
+
+    Downloads the 144-month AirPassengers CSV (a few KB, checksum-pinned) from Rdatasets.
+    """
+    export.run(
+        load_config(
+            CONFIG,
+            export.ExportConfig,
+            model_dir=tmp_path,
+            models=[{"kind": "forecast", "name": "air", "series": "air_passengers"}],
+        )
+    )
+    with TestClient(api.create_app(tmp_path)) as c:
+        meta = c.get("/models/air").json()
+        body = c.post("/forecast/air", json={"horizon": 24, "level": 0.9}).json()
+    assert meta["transform"] == "log"
+    assert meta["ets_spec"]["trend"] == "add"
+    points = body["points"]
+    assert points[0]["date"] == "1961-01-01"
+    assert all(p["lower"] < p["mean"] < p["upper"] for p in points)
+    means = [p["mean"] for p in points]
+    assert sum(means[12:]) / 12 > sum(means[:12]) / 12
+    assert 350 < means[0] < 600  # back-transformed to passengers (thousands), not log units
 
 
 def test_anomaly(client):

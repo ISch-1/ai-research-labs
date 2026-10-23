@@ -111,30 +111,41 @@ def _drift(y: np.ndarray, h: int, m: int, z: float) -> Forecast:
 # --------------------------------------------------------------------- statistical
 
 
-def _ets(y: np.ndarray, h: int, m: int, z: float) -> Forecast:
+ETS_CANDIDATES = [
+    {"error": "add", "trend": trend, "damped_trend": damped, "seasonal": seasonal}
+    for trend, damped in [(None, False), ("add", False), ("add", True)]
+    for seasonal in ("add", "mul")
+]
+
+
+def fit_ets(y: pd.Series, m: int) -> tuple[Any, dict[str, Any]]:
+    """Fit every ETS candidate and return the AIC-best fit with its specification.
+
+    Multiplicative seasonality is only tried on strictly positive series. Pass a
+    Series (not an ndarray): that avoids a statsmodels 0.15 bug in get_prediction.
+    """
     from statsmodels.tsa.exponential_smoothing.ets import ETSModel
 
-    positive = bool(np.all(y > 0))
-    candidates = [
-        {"error": "add", "trend": trend, "damped_trend": damped, "seasonal": seasonal}
-        for trend, damped in [(None, False), ("add", False), ("add", True)]
-        for seasonal in (["add", "mul"] if positive else ["add"])
-    ]
-    best, best_aic = None, np.inf
-    for spec in candidates:
+    positive = bool((y > 0).all())
+    best, best_aic, best_spec = None, np.inf, None
+    for spec in ETS_CANDIDATES:
+        if spec["seasonal"] == "mul" and not positive:
+            continue
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                # A Series (not an ndarray) avoids a statsmodels 0.15 bug in get_prediction.
-                fit = ETSModel(pd.Series(y), seasonal_periods=m, **spec).fit(
-                    disp=False, maxiter=2000
-                )
+                fit = ETSModel(y, seasonal_periods=m, **spec).fit(disp=False, maxiter=2000)
         except Exception:
             continue
         if np.isfinite(fit.aic) and fit.aic < best_aic:
-            best, best_aic = fit, fit.aic
-    if best is None:
+            best, best_aic, best_spec = fit, fit.aic, spec
+    if best is None or best_spec is None:
         raise RuntimeError("no ETS specification could be fitted")
+    return best, best_spec
+
+
+def _ets(y: np.ndarray, h: int, m: int, z: float) -> Forecast:
+    best, _ = fit_ets(pd.Series(y), m)
     alpha = 2 * sps.norm.sf(z)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

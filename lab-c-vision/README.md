@@ -77,7 +77,7 @@ The full write-up — questions, setup, results with CIs and limitations — is 
 | C3 | Augmentation recipes × data size | [`augmentation.py`](src/lab_c/augmentation.py), [`augment.py`](src/lab_c/augment.py) | [C3](reports/c3_augmentation.md) |
 | C4 | Confusions, confident errors, calibration, robustness to corruptions | [`errors.py`](src/lab_c/errors.py) | [C4](reports/c4_errors.md) |
 | C5 | Saliency, Integrated Gradients, Grad-CAM; deletion-test faithfulness; shortcut learning | [`interpret.py`](src/lab_c/interpret.py) | [C5](reports/c5_interpret.md) |
-| Demo | The best Pets model with calibrated probabilities and attribution maps (Gradio) | [`export.py`](src/lab_c/export.py), [`demos/pets-gradcam`](../demos/pets-gradcam/) | [model card](../docs/model-cards/pets-efficientnet-b0.md) |
+| Demo | The best Pets model with calibrated probabilities and attribution maps (in the browser with ONNX; Gradio locally) | [`export.py`](src/lab_c/export.py), [`demos/pets-web`](../demos/pets-web/), [`demos/pets-gradcam`](../demos/pets-gradcam/) | [live demo](https://huggingface.co/spaces/Iansha/pet-breeds-gradcam) · [model card](../docs/model-cards/pets-efficientnet-b0.md) |
 
 ## Methodology
 

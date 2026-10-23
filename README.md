@@ -4,6 +4,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11%20|%203.12%20|%203.13-blue)](https://www.python.org/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://github.com/astral-sh/ruff)
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+[![Demo on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Hugging%20Face%20Space-yellow)](https://huggingface.co/spaces/Iansha/pet-breeds-gradcam)
 
 > Three reproducible research labs that compare classical ML, statistical methods and neural networks — on tabular data, text and images — and answer each question **with confidence intervals and significance tests, not single numbers**. Every experiment is a config file plus one command; every model that matters ships behind an API or a demo.
 
@@ -35,11 +36,13 @@
 
 ## Demo — pet breeds with attribution maps
 
-The best Lab C model as a [Gradio app](demos/pets-gradcam/) ready for Hugging Face Spaces: 37 breeds,
+**[Try it live on Hugging Face Spaces](https://huggingface.co/spaces/Iansha/pet-breeds-gradcam)** — the best Lab C model as a [Gradio app](demos/pets-gradcam/): 37 breeds,
 calibrated probabilities, and Grad-CAM or Integrated Gradients for the evidence. The fourth image
 is a known failure — a birman taken for a ragdoll, the most-confused pair.
 
 ![Demo output on four test images](docs/assets/pets-demo.png)
+
+To run it locally:
 
 ```bash
 python -m lab_c.export --config lab-c-vision/configs/export_demo.yaml   # weights from the C2 cache
@@ -138,8 +141,7 @@ With `make` available: `make setup`, `make test`, `make lab-a` (all experiments)
 - [x] **Phase 1** — Lab A: regression/classification, forecasting, clustering & anomalies, statistical comparison, model-serving API
 - [x] **Phase 2** — Lab B: representations, text classification, semantic search & RAG, LLM evaluation, cost/latency/quality
 - [x] **Phase 3** — Lab C: perceptron & MLP from scratch, CNNs & transfer learning, augmentation, error analysis, interpretability
-- [x] **Phase 4** — technical reports, model and data cards, Gradio demo
-- [ ] Hosted demo on Hugging Face Spaces
+- [x] **Phase 4** — technical reports, model and data cards, [hosted Gradio demo](https://huggingface.co/spaces/Iansha/pet-breeds-gradcam)
 
 ## License
 

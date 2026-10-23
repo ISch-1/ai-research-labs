@@ -19,6 +19,8 @@ A Gradio demo of the best model from **Lab C** of
 the Oxford-IIIT Pet dataset, gives **calibrated** probabilities, and shows which pixels support
 its answer with **Grad-CAM** or **Integrated Gradients**.
 
+**Live demo:** <https://huggingface.co/spaces/Iansha/pet-breeds-gradcam>
+
 ![Demo output on four test images](https://raw.githubusercontent.com/ISch-1/ai-research-labs/main/docs/assets/pets-demo.png)
 
 | | |

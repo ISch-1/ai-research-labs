@@ -1,7 +1,7 @@
 # Model card — Pet breed classifier (EfficientNet-B0, LP-FT with frozen BatchNorm)
 
 *Format after Mitchell et al. (2019), "Model cards for model reporting". Demo:
-[`demos/pets-gradcam`](../../demos/pets-gradcam/) · Report: [Lab C](../reports/lab-c-vision.md).*
+[live on Hugging Face Spaces](https://huggingface.co/spaces/Iansha/pet-breeds-gradcam) ([code](../../demos/pets-gradcam/)) · Report: [Lab C](../reports/lab-c-vision.md).*
 
 ## Model details
 
